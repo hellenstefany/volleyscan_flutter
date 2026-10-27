@@ -112,15 +112,28 @@ class EntrenadorSidebar extends StatelessWidget {
             height: 42,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              gradient: const LinearGradient(colors: [_blue, _purple]),
               boxShadow: [
                 BoxShadow(color: _blue.withOpacity(0.45), blurRadius: 22),
               ],
             ),
-            // Para usar tu logo: reemplaza el Icon por
-            // ClipRRect(borderRadius: BorderRadius.circular(12),
-            //   child: Image.asset('assets/images/Logo.VS.jpg', fit: BoxFit.cover))
-            child: const Icon(Icons.sports_volleyball, color: Colors.white),
+            // Tu logo. Cambia el nombre si tu archivo se llama distinto.
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                'assets/images/Logo.VS.jpg',
+                fit: BoxFit.cover,
+                // Si la imagen no se encuentra, muestra el icono de antes
+                errorBuilder: (_, __, ___) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(colors: [_blue, _purple]),
+                  ),
+                  child: const Icon(
+                    Icons.sports_volleyball,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           const Column(

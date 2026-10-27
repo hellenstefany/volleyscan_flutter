@@ -280,10 +280,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenW = MediaQuery.of(context).size.width;
+    // Se usa el ancho DISPONIBLE (no el de toda la ventana): así el título
+    // deja espacio al botón del menú cuando el contenido se ve angosto.
+    return LayoutBuilder(
+      builder: (context, box) => _buildBody(box.maxWidth < 760),
+    );
+  }
 
-    final narrow = screenW < 760;
-
+  Widget _buildBody(bool narrow) {
     return Material(
       color: _bgSecondary,
 

@@ -68,6 +68,40 @@ String _horaActual() {
   return '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}';
 }
 
+/// Logo de la app (assets/images/Logo.VS.jpg).
+/// Si la imagen no se encuentra, muestra el icono de antes.
+Widget _logo(double size, double radius) {
+  return Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(radius),
+      boxShadow: [
+        BoxShadow(
+          color: _accent.withOpacity(0.35),
+          blurRadius: 22,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: Image.asset(
+        'assets/images/Logo.VS.jpg',
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          decoration: const BoxDecoration(gradient: _aiGradient),
+          child: Icon(
+            Icons.sports_volleyball,
+            color: Colors.white,
+            size: size * 0.55,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 /// Respuesta de prueba. Reemplázala pasando `onSend` con tu llamada real a la API.
 Future<String> _respuestaSimulada(String mensaje) async {
   await Future.delayed(const Duration(milliseconds: 1200));
@@ -207,26 +241,7 @@ class _AnalisisScreenState extends State<AnalisisScreen> {
     final identity = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            gradient: _aiGradient,
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: [
-              BoxShadow(
-                color: _accent.withOpacity(0.35),
-                blurRadius: 22,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.sports_volleyball,
-            color: Colors.white,
-            size: 28,
-          ),
-        ),
+        _logo(52, 12), // logo de la cabecera
         const SizedBox(width: 16),
         Flexible(
           child: Column(
@@ -427,6 +442,7 @@ class _AnalisisScreenState extends State<AnalisisScreen> {
   }
 
   Widget _avatar(bool coach) {
+    if (coach) return _logo(40, 10); // logo del coach
     return Container(
       width: 40,
       height: 40,

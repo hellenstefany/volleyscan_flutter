@@ -170,7 +170,7 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
-                          'Scan IA',
+                          'chat IA',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
