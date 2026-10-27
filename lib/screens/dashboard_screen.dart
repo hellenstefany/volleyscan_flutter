@@ -11,6 +11,12 @@ import '../widgets/usuario/streak_card.dart';
 import 'profile_screen.dart';
 import 'routines_screen.dart';
 import 'progress_screen.dart';
+import 'settings_screen.dart';
+import 'analysis_screen.dart';
+import 'ai_history_screen.dart';
+import 'notifications_screen.dart';
+import 'history_screen.dart';
+import 'content_screen.dart';
 
 /// Panel de usuario (Inicio).
 class DashboardScreen extends StatefulWidget {
@@ -39,32 +45,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
     0.95,
   ];
 
-  void _openProfile() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ProfileScreen(userName: widget.userName),
-      ),
-    );
+  /// Abre una pantalla encima del panel.
+  void _go(Widget screen) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 
-  void _onMenuSelect(String id) {
-    if (id == 'perfil') {
-      _openProfile();
-      return;
-    }
-    // TODO: navegar según el id: 'rutinas', 'historial', 'contenido',
-    // 'progreso', 'analisis_ia', 'historial_ia', 'notificaciones',
-    // 'configuracion'.
-  }
+  void _openProfile() => _go(ProfileScreen(userName: widget.userName));
 
+  /// Barra inferior: 0 Inicio, 1 Rutinas, 2 Scan IA, 3 Historial, 4 Perfil.
   void _onNavTap(int index) {
-    if (index == 4) {
-      _openProfile();
-      return;
+    switch (index) {
+      case 0:
+        break; // ya estás en Inicio
+      case 1:
+        _go(const RoutinesScreen());
+        break;
+      case 2:
+        _go(const AnalysisScreen());
+        break;
+      case 3:
+        _go(const HistoryScreen());
+        break;
+      case 4:
+        _openProfile();
+        break;
     }
-    setState(() => _navIndex = index);
-    // TODO: navegar a Rutinas / Scan IA / Historial.
+  }
+
+  /// Menú lateral (drawer).
+  void _onMenuSelect(String id) {
+    switch (id) {
+      case 'perfil':
+        _openProfile();
+        break;
+      case 'rutinas':
+        _go(const RoutinesScreen());
+        break;
+      case 'progreso':
+        _go(const ProgressScreen());
+        break;
+      case 'configuracion':
+        _go(const SettingsScreen());
+        break;
+      case 'analisis_ia':
+        _go(const AnalysisScreen());
+        break;
+      case 'historial_ia':
+        _go(const AiHistoryScreen());
+        break;
+      case 'notificaciones':
+        _go(const NotificationsScreen());
+        break;
+      case 'historial':
+        _go(const HistoryScreen());
+        break;
+      case 'contenido':
+        _go(const ContentScreen());
+        break;
+    }
   }
 
   @override
@@ -75,28 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       drawer: DashboardDrawer(
         userName: widget.userName,
         selectedId: 'panel',
-        onSelect: (id) {
-          switch (id) {
-            case 'perfil':
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-              break;
-            case 'rutinas':
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RoutinesScreen()),
-              );
-              break;
-            case 'progreso':
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProgressScreen()),
-              );
-              break;
-          }
-        },
+        onSelect: _onMenuSelect,
       ),
       bottomNavigationBar: DashboardBottomNav(
         currentIndex: _navIndex,
@@ -110,9 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               userName: widget.userName,
               notifications: 3,
               onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-              onBellTap: () {
-                // TODO: abrir notificaciones
-              },
+              onBellTap: () => _go(const NotificationsScreen()),
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -179,9 +194,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   title: 'Recepción + Pase',
                                   completed: 3,
                                   total: 3,
-                                  onViewRoutine: () {
-                                    // TODO: abrir la rutina
-                                  },
+                                  onViewRoutine: () =>
+                                      _go(const RoutinesScreen()),
                                 ),
                               ),
                             ],

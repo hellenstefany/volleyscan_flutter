@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import '../utils/bottom_nav_router.dart';
+import '../widgets/usuario/dashboard_bottom_nav.dart';
 import '../models/routine_data.dart';
 import '../theme/routine_colors.dart';
 import '../widgets/usuario/routine_exercise_tile.dart';
 import '../widgets/usuario/routine_info_cards.dart';
 import '../widgets/usuario/routine_progress_card.dart';
+import '../widgets/usuario/menu_button.dart';
 
 class RoutinesScreen extends StatefulWidget {
   const RoutinesScreen({super.key});
@@ -38,14 +41,19 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
       appBar: AppBar(
         backgroundColor: RoutineColors.background,
         elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: const MenuButton(),
         title: const Text(
           'Rutinas',
           style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      // drawer: const DashboardDrawer(),               // tu drawer existente
-      // bottomNavigationBar: const DashboardBottomNav(), // tu bottom nav
+      drawer: const UserDrawer(selectedId: 'rutinas'),
+      bottomNavigationBar: DashboardBottomNav(
+        currentIndex: 1,
+        onTap: (i) => goToTab(context, i, current: 1),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),

@@ -187,8 +187,9 @@ class ProfileDropdown extends StatelessWidget {
     required this.value,
     required this.items,
     required this.onChanged,
+    this.showArrow = true,
   });
-
+  final bool showArrow;
   final String label;
   final String value;
   final List<String> items;
@@ -207,10 +208,12 @@ class ProfileDropdown extends StatelessWidget {
           dropdownColor: DashColors.card,
           borderRadius: BorderRadius.circular(12),
           style: _inputStyle,
-          icon: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: Colors.white.withOpacity(0.6),
-          ),
+          icon: showArrow
+              ? Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Colors.white.withOpacity(0.6),
+                )
+              : const SizedBox.shrink(),
           decoration: profileDecoration(),
           items: [
             for (final i in items)

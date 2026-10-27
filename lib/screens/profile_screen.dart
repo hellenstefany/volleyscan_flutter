@@ -3,16 +3,15 @@ import '../models/goals_data.dart';
 import '../models/preferences_data.dart';
 import '../models/profile_data.dart';
 import '../theme/dash_colors.dart';
+import '../utils/bottom_nav_router.dart';
 import '../widgets/usuario/dashboard_bottom_nav.dart';
-import '../widgets/usuario/dashboard_drawer.dart';
 import '../widgets/usuario/goals_form.dart';
+import '../widgets/usuario/menu_button.dart';
 import '../widgets/usuario/personal_info_form.dart';
 import '../widgets/usuario/preferences_form.dart';
 import '../widgets/usuario/profile_section_tabs.dart';
 import '../widgets/usuario/profile_summary_card.dart';
 import '../widgets/usuario/security_form.dart';
-import 'routines_screen.dart';
-import 'progress_screen.dart';
 
 /// Pantalla "Perfil de Usuario".
 class ProfileScreen extends StatefulWidget {
@@ -102,44 +101,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _onMenuSelect(String id) {
-    if (id == 'panel') {
-      Navigator.pop(context); // vuelve al panel
-    }
-    if (id == 'rutinas') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const RoutinesScreen()),
-      );
-    }
-    if (id == 'progreso') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ProgressScreen()),
-      );
-    }
-  }
-
-  void _onNavTap(int index) {
-    if (index == 0) {
-      Navigator.pop(context); // Inicio = volver al panel
-    }
-    // TODO: Rutinas / Scan IA / Historial.
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: DashColors.bg,
-      drawer: DashboardDrawer(
-        userName: _profile.fullName,
-        selectedId: 'perfil',
-        onSelect: _onMenuSelect,
-      ),
+      drawer: UserDrawer(selectedId: 'perfil', userName: widget.userName),
       bottomNavigationBar: DashboardBottomNav(
         currentIndex: 4,
-        onTap: _onNavTap,
+        onTap: (i) => goToTab(context, i, current: 4),
       ),
       body: SafeArea(
         bottom: false,
@@ -199,7 +169,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: Colors.white.withOpacity(0.1)),
               ),
-              child: const Icon(Icons.menu, size: 22, color: Colors.white),
+              child: const Icon(
+                Icons.menu_rounded,
+                size: 22,
+                color: Colors.white,
+              ),
             ),
           ),
           const SizedBox(width: 14),

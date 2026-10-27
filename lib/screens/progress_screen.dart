@@ -5,6 +5,7 @@ import '../widgets/usuario/frequent_errors_card.dart';
 import '../widgets/usuario/performance_chart_card.dart';
 import '../widgets/usuario/progress_stat_cards.dart';
 import '../widgets/usuario/technique_donut_card.dart';
+import '../widgets/usuario/menu_button.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -31,12 +32,17 @@ class _ProgressScreenState extends State<ProgressScreen> {
       appBar: AppBar(
         backgroundColor: RoutineColors.background,
         elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: const MenuButton(),
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Progreso',
           style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
         ),
       ),
+      drawer: const UserDrawer(
+        selectedId: 'progreso',
+      ), // cambia el id en cada archivo
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
