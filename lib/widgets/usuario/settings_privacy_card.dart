@@ -16,6 +16,8 @@ class SettingsPrivacyCard extends StatelessWidget {
     required this.onLogout,
   });
 
+  static const _red = Color(0xFFEF4444);
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -66,19 +68,20 @@ class SettingsPrivacyCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: 46,
-            child: OutlinedButton(
+            child: OutlinedButton.icon(
               onPressed: onLogout,
+              icon: const Icon(Icons.logout_rounded, size: 20, color: _red),
+              label: const Text(
+                'Cerrar sesión',
+                style: TextStyle(color: _red, fontWeight: FontWeight.w600),
+              ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
+                foregroundColor: _red,
                 backgroundColor: const Color(0xFF0A1022),
                 side: const BorderSide(color: Color(0xFF7F1D1D)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-              ),
-              child: const Text(
-                'Cerrar sesión',
-                style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),
