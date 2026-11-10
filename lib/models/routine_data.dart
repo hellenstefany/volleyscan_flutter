@@ -15,6 +15,14 @@ class RoutineExercise {
 
   String get description => '$sets series x $reps repeticiones';
 
+  factory RoutineExercise.fromApi(Map<String, dynamic> j) => RoutineExercise(
+    id: j['id'].toString(),
+    name: j['nombre'] ?? '',
+    sets: (j['series'] ?? 3) as int,
+    reps: (j['repeticiones'] ?? 10) as int,
+    completed: j['completado'] == true,
+  );
+
   RoutineExercise copyWith({bool? completed}) => RoutineExercise(
     id: id,
     name: name,
@@ -25,14 +33,16 @@ class RoutineExercise {
 }
 
 class RoutineData {
+  final int id;
   final String title;
-  final String levelLabel; // INTERMEDIO
+  final String levelLabel;
   final int levelIndex; // 1 = básico, 2 = intermedio, 3 = avanzado
   final String subtitle;
   final String weeklyGoal;
   final List<RoutineExercise> exercises;
 
   const RoutineData({
+    this.id = 0,
     required this.title,
     required this.levelLabel,
     required this.levelIndex,
@@ -46,7 +56,24 @@ class RoutineData {
   double get progress =>
       exercises.isEmpty ? 0 : completedCount / exercises.length;
 
+  factory RoutineData.fromApi(Map<String, dynamic> j) {
+    final nivel = (j['nivel'] ?? 'intermedio').toString();
+    const indices = {'principiante': 1, 'intermedio': 2, 'avanzado': 3};
+    return RoutineData(
+      id: j['id'] as int,
+      title: j['nombre'] ?? 'Rutina',
+      levelLabel: nivel.toUpperCase(),
+      levelIndex: indices[nivel] ?? 2,
+      subtitle: j['descripcion'] ?? '',
+      weeklyGoal: j['objetivo'] ?? '',
+      exercises: ((j['ejercicios'] ?? []) as List)
+          .map((e) => RoutineExercise.fromApi(Map<String, dynamic>.from(e)))
+          .toList(),
+    );
+  }
+
   RoutineData copyWith({List<RoutineExercise>? exercises}) => RoutineData(
+    id: id,
     title: title,
     levelLabel: levelLabel,
     levelIndex: levelIndex,
@@ -55,7 +82,6 @@ class RoutineData {
     exercises: exercises ?? this.exercises,
   );
 
-  /// Datos de ejemplo. Reemplázalos por la respuesta de tu API.
   static const sample = RoutineData(
     title: 'Rutina personalizada',
     levelLabel: 'INTERMEDIO',

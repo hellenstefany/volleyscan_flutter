@@ -7,6 +7,7 @@ import '../widgets/usuario/routine_exercise_tile.dart';
 import '../widgets/usuario/routine_info_cards.dart';
 import '../widgets/usuario/routine_progress_card.dart';
 import '../widgets/usuario/menu_button.dart';
+import '../services/api_service.dart';
 
 class RoutinesScreen extends StatefulWidget {
   const RoutinesScreen({super.key});
@@ -16,18 +17,54 @@ class RoutinesScreen extends StatefulWidget {
 }
 
 class _RoutinesScreenState extends State<RoutinesScreen> {
-  RoutineData _routine = RoutineData.sample;
+  final _api = ApiService();
+  RoutineData? _routine;
+  bool _loading = true;
+  String? _error;
 
-  void _startExercise(RoutineExercise exercise) {
-    // TODO: navegar a la pantalla del ejercicio / cámara de análisis.
-    // Por ahora lo marcamos como completado para probar el progreso.
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
     setState(() {
-      _routine = _routine.copyWith(
-        exercises: _routine.exercises
-            .map((e) => e.id == exercise.id ? e.copyWith(completed: true) : e)
-            .toList(),
-      );
+      _loading = true;
+      _error = null;
     });
+    try {
+      final lista = await _api.get('/usuario/rutinas/') as List;
+      if (lista.isEmpty) {
+        _routine = null;
+      } else {
+        final detalle = await _api.get(
+          '/usuario/rutinas/${lista.first['id']}/',
+        );
+        _routine = RoutineData.fromApi(Map<String, dynamic>.from(detalle));
+      }
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _startExercise(RoutineExercise exercise) async {
+    final r = _routine;
+    if (r == null) return;
+    try {
+      await _api.put(
+        '/usuario/rutinas/${r.id}/ejercicios/${exercise.id}/completar/',
+        {'completado': true},
+      );
+      await _cargar(); // refresca desde la base de datos
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
   }
 
   void _viewFullRoutine() {
@@ -36,6 +73,29 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: RoutineColors.background,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_error != null || _routine == null) {
+      return Scaffold(
+        backgroundColor: RoutineColors.background,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              _error ?? 'Aún no tienes rutinas',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ),
+      );
+    }
+    final routine = _routine!;
+
     return Scaffold(
       backgroundColor: RoutineColors.background,
       appBar: AppBar(
@@ -67,13 +127,13 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(),
+                _buildHeader(routine),
                 const SizedBox(height: 20),
-                WeeklyGoalCard(goal: _routine.weeklyGoal),
+                WeeklyGoalCard(goal: routine.weeklyGoal),
                 const SizedBox(height: 12),
                 DifficultyCard(
-                  label: _capitalize(_routine.levelLabel),
-                  level: _routine.levelIndex,
+                  label: _capitalize(routine.levelLabel),
+                  level: routine.levelIndex,
                 ),
                 const SizedBox(height: 24),
                 const Text(
@@ -86,7 +146,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                ..._routine.exercises.asMap().entries.map(
+                ...routine.exercises.asMap().entries.map(
                   (entry) => RoutineExerciseTile(
                     number: entry.key + 1,
                     exercise: entry.value,
@@ -95,9 +155,9 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
                 ),
                 const SizedBox(height: 8),
                 RoutineProgressCard(
-                  progress: _routine.progress,
-                  completed: _routine.completedCount,
-                  total: _routine.exercises.length,
+                  progress: routine.progress,
+                  completed: routine.completedCount,
+                  total: routine.exercises.length,
                   onViewFull: _viewFullRoutine,
                 ),
               ],
@@ -108,7 +168,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(RoutineData routine) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -118,7 +178,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           runSpacing: 6,
           children: [
             Text(
-              _routine.title,
+              routine.title,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 22,
@@ -133,7 +193,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
                 border: Border.all(color: RoutineColors.amber.withOpacity(0.6)),
               ),
               child: Text(
-                _routine.levelLabel,
+                routine.levelLabel,
                 style: const TextStyle(
                   color: RoutineColors.amber,
                   fontSize: 12,
@@ -146,7 +206,7 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          _routine.subtitle,
+          routine.subtitle,
           style: const TextStyle(color: RoutineColors.textMuted, fontSize: 14),
         ),
       ],

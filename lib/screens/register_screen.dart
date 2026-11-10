@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:volleyscan_mobile/screens/dashboard_screen.dart';
 import '../utils/validators.dart';
 import '../widgets/auth/auth_text_field.dart';
 import '../widgets/auth/back_home_button.dart';
@@ -7,6 +8,7 @@ import '../widgets/auth/gradient_button.dart';
 import '../widgets/auth/password_strength.dart';
 import '../widgets/auth/social_button.dart';
 import 'login_screen.dart';
+import '../services/api_service.dart';
 
 const _cyan = Color(0xFF22D3EE);
 
@@ -70,22 +72,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _loading = true);
     try {
-      await _registerUser({
-        'nombre': _nameCtrl.text.trim(),
-        'apellido': _lastCtrl.text.trim(),
-        'correo': _emailCtrl.text.trim().toLowerCase(),
-        'contrasena': _passCtrl.text,
-      });
+      await ApiService().registro(
+        _nameCtrl.text.trim(),
+        _lastCtrl.text.trim(),
+        _emailCtrl.text.trim().toLowerCase(),
+        _passCtrl.text,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cuenta creada correctamente')),
       );
-    } catch (_) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo crear la cuenta. Intenta de nuevo.'),
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -260,9 +264,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   onToggleObscure: () =>
                                       setState(() => _obscure = !_obscure),
                                   textInputAction: TextInputAction.next,
-                                  autofillHints: const [
-                                    AutofillHints.newPassword,
-                                  ],
                                   inputFormatters: _passFormatters,
                                   onChanged: (_) => setState(() {}),
                                   validator: (v) => Validators.password(

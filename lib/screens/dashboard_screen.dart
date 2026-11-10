@@ -17,10 +17,11 @@ import 'ai_history_screen.dart';
 import 'notifications_screen.dart';
 import 'history_screen.dart';
 import 'content_screen.dart';
+import '../services/api_service.dart';
 
 /// Panel de usuario (Inicio).
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key, this.userName = 'Agustin'});
+  const DashboardScreen({super.key, this.userName = ''});
 
   final String userName;
 
@@ -31,6 +32,25 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   int _navIndex = 0;
+
+  String _nombre = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarNombre();
+  }
+
+  Future<void> _cargarNombre() async {
+    try {
+      final p = await ApiService().get('/usuario/perfil/');
+      if (mounted) setState(() => _nombre = (p['nombre'] ?? '').toString());
+    } catch (_) {
+      // Si falla, el saludo queda genérico.
+    }
+  }
+
+  String get _displayName => _nombre.isNotEmpty ? _nombre : _displayName;
 
   // TODO: reemplazar por los datos reales de tu backend.
   static const _progressTrend = <double>[
@@ -50,7 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 
-  void _openProfile() => _go(ProfileScreen(userName: widget.userName));
+  void _openProfile() => _go(ProfileScreen(userName: _displayName));
 
   /// Barra inferior: 0 Inicio, 1 Rutinas, 2 Scan IA, 3 Historial, 4 Perfil.
   void _onNavTap(int index) {
@@ -111,7 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       key: _scaffoldKey,
       backgroundColor: DashColors.bg,
       drawer: DashboardDrawer(
-        userName: widget.userName,
+        userName: _displayName,
         selectedId: 'panel',
         onSelect: _onMenuSelect,
       ),
@@ -124,7 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           children: [
             DashboardHeader(
-              userName: widget.userName,
+              userName: _displayName,
               notifications: 3,
               onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
               onBellTap: () => _go(const NotificationsScreen()),

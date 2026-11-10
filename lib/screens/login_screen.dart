@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:volleyscan_mobile/screens/dashboard_screen.dart';
 import '../widgets/auth/auth_text_field.dart';
 import '../widgets/auth/back_home_button.dart';
 import '../widgets/auth/gradient_button.dart';
 import '../widgets/auth/social_button.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
+import '../services/api_service.dart';
 
 const _sky = Color(0xFF38BDF8);
 const _cyan = Color(0xFF22D3EE);
@@ -22,6 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passCtrl = TextEditingController();
   bool _obscure = true;
   bool _remember = true;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -30,9 +33,26 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_loading) return;
     if (!_formKey.currentState!.validate()) return;
-    // TODO: conectar con tu backend / autenticación
+
+    setState(() => _loading = true);
+    try {
+      await ApiService().login(_emailCtrl.text.trim(), _passCtrl.text);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
