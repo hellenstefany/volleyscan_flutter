@@ -13,6 +13,7 @@ class StatCard extends StatelessWidget {
     required this.label,
     required this.value,
     this.delta,
+    this.deltaPositive = true,
     this.caption,
     this.chart,
   });
@@ -23,6 +24,7 @@ class StatCard extends StatelessWidget {
   final String label;
   final String value;
   final String? delta;
+  final bool deltaPositive;
   final String? caption;
   final Widget? chart;
 
@@ -46,7 +48,9 @@ class StatCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: iconBg,
                       borderRadius: BorderRadius.circular(9),
-                      border: Border.all(color: iconColor.withOpacity(0.35)),
+                      border: Border.all(
+                        color: iconColor.withValues(alpha: 0.35),
+                      ),
                     ),
                     child: Icon(icon, size: 16, color: iconColor),
                   ),
@@ -83,26 +87,32 @@ class StatCard extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
-                      if (delta != null) ...[
+                      if (delta != null && delta!.isNotEmpty) ...[
                         const SizedBox(width: 8),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 5),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
-                                Icons.arrow_upward_rounded,
+                              Icon(
+                                deltaPositive
+                                    ? Icons.arrow_upward_rounded
+                                    : Icons.arrow_downward_rounded,
                                 size: 12,
-                                color: DashColors.green,
+                                color: deltaPositive
+                                    ? DashColors.green
+                                    : const Color(0xFFF87171),
                               ),
                               const SizedBox(width: 2),
                               Text(
                                 delta!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'Poppins',
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
-                                  color: DashColors.green,
+                                  color: deltaPositive
+                                      ? DashColors.green
+                                      : const Color(0xFFF87171),
                                 ),
                               ),
                             ],

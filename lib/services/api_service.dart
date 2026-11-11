@@ -413,9 +413,30 @@ class ApiService {
     await logout();
   }
 
-  // ---------- Perfil ----------
+  // ---------- Perfil y Dashboard de Usuario ----------
 
   Future<Map<String, dynamic>> perfil() async =>
       Map<String, dynamic>.from(await get('/usuario/perfil/') as Map);
+
+  /// Obtiene los datos principales del dashboard del atleta (`GET /api/usuario/dashboard/`).
+  Future<Map<String, dynamic>> dashboardUsuario() async =>
+      Map<String, dynamic>.from(await get('/usuario/dashboard/') as Map);
+
+  /// Obtiene el progreso completo del deportista (`GET /api/ia/progreso?tz=...`).
+  /// `tz` equivale a `new Date().getTimezoneOffset()` en JS (minutos de desfase UTC -> local).
+  Future<Map<String, dynamic>> progresoAtleta({int? tzOffsetMinutes}) async {
+    final tz = tzOffsetMinutes ?? -DateTime.now().timeZoneOffset.inMinutes;
+    return Map<String, dynamic>.from(await get('/ia/progreso?tz=$tz') as Map);
+  }
+
+  /// Obtiene el contador de avisos/notificaciones sin leer (`GET /api/ia/avisos/contador`).
+  Future<int> contadorAvisos({bool todas = true}) async {
+    final query = todas ? '?todas=1' : '';
+    final data = await get('/ia/avisos/contador$query');
+    if (data is Map && data['noLeidas'] != null) {
+      return int.tryParse(data['noLeidas'].toString()) ?? 0;
+    }
+    return 0;
+  }
 }
 
