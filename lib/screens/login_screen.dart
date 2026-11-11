@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:volleyscan_mobile/screens/dashboard_screen.dart';
+import '../services/api_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/auth/auth_logo.dart';
 import '../widgets/auth/auth_text_field.dart';
-import '../widgets/auth/back_home_button.dart';
 import '../widgets/auth/gradient_button.dart';
 import '../widgets/auth/social_button.dart';
+import '../widgets/usuario/dash_card.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
-import '../services/api_service.dart';
-
-const _sky = Color(0xFF38BDF8);
-const _cyan = Color(0xFF22D3EE);
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,12 +18,21 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  /// Oculto por ahora; activar cuando se configure Google OAuth en Flutter
+  /// contra `POST /api/auth/google` (equivalente a `NEXT_PUBLIC_GOOGLE_CLIENT_ID`).
+  static const bool _enableGoogleLogin = false;
+
+  static final RegExp _emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+
   bool _obscure = true;
-  bool _remember = true;
+  bool _remember = false;
   bool _loading = false;
+  String? _emailError;
+  String? _passError;
 
   @override
   void dispose() {
@@ -33,58 +41,312 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (_loading) return;
-    if (!_formKey.currentState!.validate()) return;
+  /// Validación idéntica a `validate()` en `VolleyScan_Next/src/app/login/page.jsx`.
+  bool _validate() {
+    String? emailErr;
+    String? passErr;
 
-    setState(() => _loading = true);
+    final email = _emailCtrl.text.trim();
+    final pass = _passCtrl.text;
+
+    if (email.isEmpty) {
+      emailErr = 'El correo es obligatorio.';
+    } else if (!_emailRegex.hasMatch(email)) {
+      emailErr = 'Introduce un correo válido.';
+    }
+
+    if (pass.isEmpty) {
+      passErr = 'La contraseña es obligatoria.';
+    } else if (pass.length < 6) {
+      passErr = 'Mínimo 6 caracteres.';
+    }
+
+    setState(() {
+      _emailError = emailErr;
+      _passError = passErr;
+    });
+
+    return emailErr == null && passErr == null;
+  }
+
+  Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
+    if (_loading) return;
+    if (!_validate()) return;
+
+    setState(() {
+      _loading = true;
+      _emailError = null;
+      _passError = null;
+    });
+
     try {
       await ApiService().login(_emailCtrl.text.trim(), _passCtrl.text);
       if (!mounted) return;
+      showAppToast(context, '✓ Bienvenido/a. Redirigiendo…', type: 'success');
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      showAppToast(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        type: 'error',
       );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+  /// Preparado para activarse con `POST /api/auth/google` (ver `panel_usuario/google.py`).
+  Future<void> _handleGoogleLogin() async {
+    showAppToast(
+      context,
+      'El inicio con Google estará disponible próximamente.',
+      type: 'info',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final cardPadding = screenWidth <= 480
+        ? const EdgeInsets.all(25)
+        : const EdgeInsets.all(40);
+
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0A0E1F), Color(0xFF0D1330)],
-          ),
-        ),
+        decoration: const BoxDecoration(gradient: AppGradients.background),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 360),
+                constraints: const BoxConstraints(maxWidth: 500),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: BackHomeButton(),
+                    // ── Header (.login-header) ──
+                    const AuthLogo(),
+                    const SizedBox(height: 20),
+
+                    // ── Card (.login-container) ──
+                    DashCard.auth(
+                      padding: cardPadding,
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              'Bienvenido',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 25.6, // 1.6rem
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.loginAccentBlue,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            const Text(
+                              'Ingresa tus credenciales para continuar.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                color: AppColors.loginTextMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 25),
+
+                            // Email (.form-group)
+                            AuthTextField(
+                              label: 'Correo Electrónico',
+                              hint: 'usuario@volleyscan.com',
+                              controller: _emailCtrl,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.email],
+                              errorText: _emailError,
+                              onChanged: (_) {
+                                if (_emailError != null) {
+                                  setState(() => _emailError = null);
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Password (.form-group)
+                            AuthTextField(
+                              label: 'Contraseña',
+                              hint: '••••••••',
+                              controller: _passCtrl,
+                              isPassword: true,
+                              obscure: _obscure,
+                              textInputAction: TextInputAction.done,
+                              autofillHints: const [AutofillHints.password],
+                              errorText: _passError,
+                              onToggleObscure: () =>
+                                  setState(() => _obscure = !_obscure),
+                              onFieldSubmitted: (_) => _submit(),
+                              onChanged: (_) {
+                                if (_passError != null) {
+                                  setState(() => _passError = null);
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Opciones (.options)
+                            Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () =>
+                                      setState(() => _remember = !_remember),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: Checkbox(
+                                          value: _remember,
+                                          onChanged: (v) => setState(
+                                            () => _remember = v ?? false,
+                                          ),
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        'Recordarme',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 13,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const ForgotPasswordScreen(),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    '¿Olvidaste tu contraseña?',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 13,
+                                      color: AppColors.loginAccentBlue,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Botón Login (.btn-login)
+                            GradientButton(
+                              text: 'INGRESAR AHORA',
+                              loadingText: 'VERIFICANDO…',
+                              showArrow: true,
+                              loading: _loading,
+                              onPressed: _submit,
+                            ),
+
+                            // Social Google (oculto mientras _enableGoogleLogin == false)
+                            if (_enableGoogleLogin) ...[
+                              const SizedBox(height: 25),
+                              Row(
+                                children: [
+                                  const Expanded(
+                                    child: Divider(
+                                      color: AppColors.inputBorder,
+                                      thickness: 1,
+                                    ),
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    child: Text(
+                                      'O CONTINÚA CON',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 12,
+                                        color: AppColors.loginTextMuted,
+                                      ),
+                                    ),
+                                  ),
+                                  const Expanded(
+                                    child: Divider(
+                                      color: AppColors.inputBorder,
+                                      thickness: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Center(
+                                child: SocialButton.google(
+                                  onPressed: _handleGoogleLogin,
+                                ),
+                              ),
+                            ],
+
+                            // Footer (.register)
+                            const SizedBox(height: 20),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              children: [
+                                const Text(
+                                  '¿Aún no tienes cuenta? ',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    color: AppColors.loginTextMuted,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterScreen(),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    '¡Regístrate Gratis!',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.loginAccentBlue,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 18),
-                    _logo(),
-                    const SizedBox(height: 26),
-                    _card(),
                   ],
                 ),
               ),
@@ -94,217 +356,5 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-  Widget _logo() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _cyan.withOpacity(0.25)),
-            boxShadow: [
-              BoxShadow(color: _cyan.withOpacity(0.18), blurRadius: 14),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.asset(
-              'assets/images/Logo.VS.jpg',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  const Icon(Icons.sports_volleyball, size: 22, color: _cyan),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        const Text(
-          'VolleyScan',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _card() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF080C1C),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.07)),
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Bienvenido',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: _sky,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Ingresa tus credenciales para continuar.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 11,
-                color: Colors.white.withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 20),
-            AuthTextField(
-              label: 'Correo Electrónico',
-              hint: 'usuario@volleyscan.com',
-              controller: _emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Ingresa tu correo';
-                if (!v.contains('@')) return 'Correo no válido';
-                return null;
-              },
-            ),
-            const SizedBox(height: 14),
-            AuthTextField(
-              label: 'Contraseña',
-              hint: '••••••••',
-              controller: _passCtrl,
-              isPassword: true,
-              obscure: _obscure,
-              onToggleObscure: () => setState(() => _obscure = !_obscure),
-              validator: (v) =>
-                  (v == null || v.length < 6) ? 'Mínimo 6 caracteres' : null,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: Checkbox(
-                    value: _remember,
-                    onChanged: (v) => setState(() => _remember = v ?? false),
-                    activeColor: _cyan,
-                    checkColor: const Color(0xFF080C1C),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                    side: const BorderSide(color: Colors.white54),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Recordarme',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 10.5,
-                    color: Colors.white,
-                  ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ForgotPasswordScreen(),
-                    ),
-                  ),
-                  child: const Text(
-                    '¿Olvidaste tu contraseña?',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 10.5,
-                      color: _sky,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            GradientButton(text: 'INGRESAR AHORA', onPressed: _submit),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(child: Divider(color: Colors.white.withOpacity(0.12))),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Text(
-                    'O CONTINÚA CON',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 9.5,
-                      letterSpacing: 0.4,
-                      color: Colors.white.withOpacity(0.5),
-                    ),
-                  ),
-                ),
-                Expanded(child: Divider(color: Colors.white.withOpacity(0.12))),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: SocialButton(
-                    label: 'Google',
-                    iconPath: 'assets/images/google.jpg',
-                    onPressed: () {},
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: SocialButton(
-                    label: 'Facebook',
-                    iconPath: 'assets/images/facebook.jpg',
-                    onPressed: () {},
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              alignment: WrapAlignment.center,
-              children: [
-                Text(
-                  '¿Aún no tienes cuenta? ',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 10.5,
-                    color: Colors.white.withOpacity(0.6),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                  ),
-                  child: const Text(
-                    '¡Regístrate Gratis!',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 10.5,
-                      color: _sky,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
+
