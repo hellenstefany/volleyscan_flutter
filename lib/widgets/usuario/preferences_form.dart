@@ -111,7 +111,7 @@ class _PreferencesFormState extends State<PreferencesForm> {
         padding: const EdgeInsets.fromLTRB(16, 13, 12, 13),
         decoration: BoxDecoration(
           color: DashColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.sm),
           border: Border.all(color: DashColors.border),
         ),
         child: Row(
@@ -126,7 +126,7 @@ class _PreferencesFormState extends State<PreferencesForm> {
                       fontFamily: 'Poppins',
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
-                      color: DashColors.text,
+                      color: DashColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -145,9 +145,9 @@ class _PreferencesFormState extends State<PreferencesForm> {
             Switch(
               value: value,
               onChanged: onChanged,
-              thumbColor: WidgetStateProperty.all(Colors.white),
+              thumbColor: WidgetStateProperty.all(DashColors.textPrimary),
               activeTrackColor: DashColors.blueLight,
-              inactiveTrackColor: const Color(0xFF374151),
+              inactiveTrackColor: DashColors.switchTrackOff,
               trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
             ),
           ],
@@ -184,7 +184,7 @@ class _PreferencesFormState extends State<PreferencesForm> {
               fontFamily: 'Poppins',
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: DashColors.text,
+              color: DashColors.textPrimary,
             ),
           ),
           const SizedBox(height: 18),

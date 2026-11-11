@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../models/profile_data.dart';
+import '../../theme/app_theme.dart';
 import '../../theme/dash_colors.dart';
 import 'dash_card.dart';
 import 'profile_avatar.dart';
 
-/// Tarjeta superior del perfil (`.pf-user-card` en Next): foto, nombre, rol y insignia de nivel.
+/// Tarjeta superior del perfil (`.identity-card` en `perfil.css`):
+/// foto con borde `--accent-blue`, nombre (`#fff`), rol (`--text-muted`) y `.badge--level` (`--accent-yellow`).
 class ProfileSummaryCard extends StatelessWidget {
   const ProfileSummaryCard({
     super.key,
@@ -19,89 +21,79 @@ class ProfileSummaryCard extends StatelessWidget {
   final String role;
   final String? photoPath;
 
-  static Color _levelColor(String? rawLevel) {
-    switch ((rawLevel ?? '').toLowerCase()) {
-      case 'principiante':
-        return DashColors.green;
-      case 'intermedio':
-        return DashColors.yellow;
-      case 'avanzado':
-        return DashColors.orange;
-      case 'profesional':
-        return DashColors.purple;
-      default:
-        return DashColors.blueLight;
-    }
-  }
-
   static String _levelLabel(String? rawLevel) {
     final key = (rawLevel ?? '').toLowerCase();
     return ProfileData.nivelLabels[key] ??
         (rawLevel != null && rawLevel.trim().isNotEmpty
             ? rawLevel.trim()
-            : 'Intermedio');
+            : 'Principiante');
   }
 
   @override
   Widget build(BuildContext context) {
-    final levelColor = _levelColor(level);
     final levelText = _levelLabel(level);
 
     return SizedBox(
       width: double.infinity,
       child: DashCard(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
+        borderRadius: AppRadii.md,
         child: Column(
           children: [
             SizedBox(
-              width: 100,
-              height: 100,
+              width: 84,
+              height: 84,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 96,
-                    height: 96,
-                    padding: const EdgeInsets.all(3),
+                    width: 80,
+                    height: 80,
+                    padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: DashColors.blueLight,
-                        width: 2.5,
+                        width: 2,
                       ),
                     ),
                     child: ProfileAvatar(
                       name: name,
                       photoPath: photoPath,
-                      size: 88,
+                      size: 76,
                     ),
                   ),
                   Positioned(
-                    right: 4,
-                    bottom: 4,
+                    right: 2,
+                    bottom: 2,
                     child: Container(
-                      width: 20,
-                      height: 20,
+                      width: 26,
+                      height: 26,
                       decoration: BoxDecoration(
                         color: DashColors.blueLight,
                         shape: BoxShape.circle,
-                        border: Border.all(color: DashColors.card, width: 3),
+                        border: Border.all(color: DashColors.card, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.edit_rounded,
+                        size: 12,
+                        color: DashColors.textPrimary,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Text(
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: DashColors.text,
+                color: DashColors.textPrimary,
               ),
             ),
             const SizedBox(height: 2),
@@ -113,22 +105,24 @@ class ProfileSummaryCard extends StatelessWidget {
                 color: DashColors.muted,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
-                color: levelColor.withValues(alpha: 0.12),
+                color: DashColors.accentYellow.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: levelColor.withValues(alpha: 0.55)),
+                border: Border.all(
+                  color: DashColors.accentYellow.withValues(alpha: 0.30),
+                ),
               ),
               child: Text(
                 levelText.toUpperCase(),
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 10.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                  color: levelColor,
+                  letterSpacing: 0.6,
+                  color: DashColors.accentYellow,
                 ),
               ),
             ),

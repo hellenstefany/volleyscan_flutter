@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import '../../theme/dash_colors.dart';
 
-/// Botones "Cancelar" y "Guardar cambios" de los formularios del perfil (`.pf-acciones` en Next).
+/// Botones "Cancelar" (`.btn--secondary`) y "Guardar cambios" (`.btn--primary`) de `perfil.css`.
 class FormActionButtons extends StatelessWidget {
   const FormActionButtons({
     super.key,
@@ -26,19 +27,19 @@ class FormActionButtons extends StatelessWidget {
             child: OutlinedButton(
               onPressed: saving ? null : onCancel,
               style: OutlinedButton.styleFrom(
-                foregroundColor: DashColors.muted,
+                foregroundColor: DashColors.textSecondary,
                 backgroundColor: DashColors.surface,
-                side: const BorderSide(color: DashColors.border),
+                side: const BorderSide(color: DashColors.border2),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
                 ),
               ),
               child: const Text(
                 'Cancelar',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -55,10 +56,10 @@ class FormActionButtons extends StatelessWidget {
                 backgroundColor: DashColors.blueLight,
                 disabledBackgroundColor:
                     DashColors.blueLight.withValues(alpha: 0.55),
-                foregroundColor: Colors.white,
+                foregroundColor: DashColors.textPrimary,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
                 ),
               ),
               child: saving
@@ -67,14 +68,14 @@ class FormActionButtons extends StatelessWidget {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: DashColors.textPrimary,
                       ),
                     )
                   : Text(
                       saveLabel,
                       style: const TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 13,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

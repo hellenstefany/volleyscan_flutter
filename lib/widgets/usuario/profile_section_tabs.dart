@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import '../../theme/dash_colors.dart';
 
 enum ProfileSection { personal, preferences, security }
 
-/// Selector de secciones del perfil (`.pf-subnav` en Next).
+/// Selector de secciones del perfil (`.profile-nav__btn` en `perfil.css`):
+/// inactiva transparente con texto `--text-secondary`; activa con `--accent-blue` y texto `#fff`.
 class ProfileSectionTabs extends StatelessWidget {
   const ProfileSectionTabs({
     super.key,
@@ -31,7 +33,7 @@ class ProfileSectionTabs extends StatelessWidget {
       child: Row(
         children: [
           for (final t in _tabs)
-            Padding(padding: const EdgeInsets.only(right: 8), child: _chip(t)),
+            Padding(padding: const EdgeInsets.only(right: 6), child: _chip(t)),
         ],
       ),
     );
@@ -45,28 +47,29 @@ class ProfileSectionTabs extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: active ? DashColors.blueLight : DashColors.card,
-          borderRadius: BorderRadius.circular(11),
-          border: Border.all(
-            color: active ? DashColors.blueLight : DashColors.border,
-          ),
+          color: active ? DashColors.blueLight : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadii.sm),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               t.icon,
-              size: 17,
-              color: active ? Colors.white : DashColors.muted,
+              size: 16,
+              color: active
+                  ? DashColors.textPrimary
+                  : DashColors.textSecondary,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Text(
               t.label,
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 12.5,
-                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                color: active ? Colors.white : DashColors.muted,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+                color: active
+                    ? DashColors.textPrimary
+                    : DashColors.textSecondary,
               ),
             ),
           ],

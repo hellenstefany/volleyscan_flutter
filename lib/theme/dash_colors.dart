@@ -35,6 +35,7 @@ class DashColors {
   static const teal = Color(0xFF14B8A6); // --accent-teal (mi-progreso.module.css)
   static const amber = Color(0xFFFBBF24); // --amber (mi-progreso.module.css)
   static const yellow = Color(0xFFFACC15); // intermedio / buena (perfil)
+  static const accentYellow = Color(0xFFEAB308); // --accent-yellow / .badge--level / .strength-bar.good (perfil.css)
   static const purple = Color(0xFFA855F7); // --accent-purple
   static const coachPurple = Color(0xFF8B5CF6); // avatar entrenador gradient
   static const orange = Color(0xFFF97316); // --accent-orange
@@ -45,10 +46,11 @@ class DashColors {
   static const successBadgeText = Color(0xFF86EFAC); // .pill.ok / .evIcon.ejercicio
   static const checkIconDark = Color(0xFF052E16); // .day.on .dot
 
-  // Bordes (globals.css)
-  static const border = Color(0x14FFFFFF); // rgba(255, 255, 255, .08)
-  static const borderSubtle = Color(0x0FFFFFFF); // rgba(255, 255, 255, .06)
-  static const border2 = Color(0x1AFFFFFF); // rgba(255, 255, 255, .10)
+  // Bordes (globals.css & perfil.css)
+  static const border = Color(0x14FFFFFF); // --border: rgba(255, 255, 255, .08)
+  static const borderSubtle = Color(0x0FFFFFFF); // --border: rgba(255, 255, 255, .06)
+  static const border2 = Color(0x1AFFFFFF); // --border2 / --border-bright: rgba(255, 255, 255, .10)
+  static const switchTrackOff = Color(0x1FFFFFFF); // .toggle-thumb: rgba(255, 255, 255, .12) (perfil.css)
   static const muted = textMuted;
 }
 

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/app_theme.dart';
 import '../../theme/dash_colors.dart';
 
 OutlineInputBorder _border(Color c) => OutlineInputBorder(
-  borderRadius: BorderRadius.circular(10),
+  borderRadius: BorderRadius.circular(AppRadii.sm),
   borderSide: BorderSide(color: c),
 );
 
-/// Estilo común de los campos del perfil (`var(--superficie)` = `DashColors.surface`).
+/// Estilo común de los campos del perfil (`.field-input-1` / `.field-select` en `perfil.css`):
+/// fondo `--bg-surface`, borde `--border-bright` (`DashColors.border2`), focus `--accent-blue`, error `--accent-red`.
 InputDecoration profileDecoration({
   String? hint,
   String? suffixText,
@@ -16,15 +18,15 @@ InputDecoration profileDecoration({
 }) {
   return InputDecoration(
     hintText: hint,
-    hintStyle: TextStyle(
+    hintStyle: const TextStyle(
       fontFamily: 'Poppins',
       fontSize: 13.5,
-      color: Colors.white.withValues(alpha: 0.3),
+      color: DashColors.text3,
     ),
     suffixText: suffixText,
-    suffixStyle: TextStyle(
+    suffixStyle: const TextStyle(
       fontFamily: 'Poppins',
-      fontSize: 11.5,
+      fontSize: 12.5,
       color: DashColors.muted,
     ),
     suffixIcon: suffixIcon,
@@ -33,15 +35,15 @@ InputDecoration profileDecoration({
     filled: true,
     fillColor: DashColors.surface,
     isDense: true,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-    enabledBorder: _border(DashColors.border),
-    border: _border(DashColors.border),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    enabledBorder: _border(DashColors.border2),
+    border: _border(DashColors.border2),
     focusedBorder: _border(DashColors.blueLight),
     errorBorder: _border(DashColors.red),
     focusedErrorBorder: _border(DashColors.red),
     errorStyle: const TextStyle(
       fontFamily: 'Poppins',
-      fontSize: 11,
+      fontSize: 11.5,
       color: DashColors.red,
     ),
   );
@@ -49,11 +51,11 @@ InputDecoration profileDecoration({
 
 const _inputStyle = TextStyle(
   fontFamily: 'Poppins',
-  fontSize: 13.5,
-  color: DashColors.text,
+  fontSize: 14,
+  color: DashColors.textPrimary,
 );
 
-/// Etiqueta en mayúsculas sobre cada campo (`.pf-label` en Next).
+/// Etiqueta en mayúsculas sobre cada campo (`.field-label` en `perfil.css`).
 class FieldLabel extends StatelessWidget {
   const FieldLabel(this.text, {super.key});
 
@@ -65,7 +67,7 @@ class FieldLabel extends StatelessWidget {
       text.toUpperCase(),
       style: const TextStyle(
         fontFamily: 'Poppins',
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.7,
         color: DashColors.muted,
@@ -138,7 +140,7 @@ class ProfileTextField extends StatelessWidget {
                       obscure
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      size: 20,
+                      size: 18,
                       color: DashColors.muted,
                     ),
                   ),
@@ -237,8 +239,8 @@ class ProfileDropdown extends StatelessWidget {
         DropdownButtonFormField<String>(
           initialValue: items.contains(value) ? value : null,
           isExpanded: true,
-          dropdownColor: DashColors.card,
-          borderRadius: BorderRadius.circular(10),
+          dropdownColor: DashColors.surface,
+          borderRadius: BorderRadius.circular(AppRadii.sm),
           style: _inputStyle,
           icon: showArrow
               ? const Icon(

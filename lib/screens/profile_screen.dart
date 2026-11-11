@@ -247,14 +247,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               _error ?? 'No se pudo cargar el perfil.',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: DashColors.text, fontSize: 13.5),
+              style: const TextStyle(
+                color: DashColors.textPrimary,
+                fontSize: 13.5,
+              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _cargarPerfil,
               style: ElevatedButton.styleFrom(
                 backgroundColor: DashColors.blueLight,
-                foregroundColor: Colors.white,
+                foregroundColor: DashColors.textPrimary,
               ),
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Reintentar'),
@@ -305,7 +308,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: const Icon(
                 Icons.menu_rounded,
                 size: 22,
-                color: Colors.white,
+                color: DashColors.textPrimary,
               ),
             ),
           ),
@@ -319,7 +322,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 fontFamily: 'Poppins',
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: DashColors.text,
+                color: DashColors.textPrimary,
               ),
             ),
           ),

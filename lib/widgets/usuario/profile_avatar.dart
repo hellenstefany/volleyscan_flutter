@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/dash_colors.dart';
 
 /// Foto de perfil. Si no hay imagen o falla la carga, muestra las iniciales sobre un degradado.
 /// Soporta URLs de red (`http://`, `https://`), rutas relativas del backend (`/media/...`) y assets locales.
@@ -34,7 +36,7 @@ class ProfileAvatar extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
+          colors: [AppColors.blue, DashColors.purple],
         ),
       ),
       child: Text(
@@ -43,7 +45,7 @@ class ProfileAvatar extends StatelessWidget {
           fontFamily: 'Poppins',
           fontSize: size * 0.32,
           fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: DashColors.textPrimary,
         ),
       ),
     );

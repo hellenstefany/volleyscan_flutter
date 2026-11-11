@@ -223,7 +223,7 @@ class _PersonalInfoFormState extends State<PersonalInfoForm> {
                 fontFamily: 'Poppins',
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: DashColors.text,
+                color: DashColors.textPrimary,
               ),
             ),
             const SizedBox(height: 16),

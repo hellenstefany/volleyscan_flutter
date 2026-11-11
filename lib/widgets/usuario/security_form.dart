@@ -140,7 +140,7 @@ class _SecurityFormState extends State<SecurityForm> {
       Colors.transparent,
       DashColors.red,
       DashColors.orange,
-      DashColors.yellow,
+      DashColors.accentYellow,
       DashColors.green,
     ];
     const labels = ['', 'Débil', 'Regular', 'Buena', 'Fuerte'];
@@ -155,9 +155,7 @@ class _SecurityFormState extends State<SecurityForm> {
               child: Container(
                 height: 4,
                 decoration: BoxDecoration(
-                  color: i <= level
-                      ? activeColor
-                      : Colors.white.withValues(alpha: 0.12),
+                  color: i <= level ? activeColor : DashColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -195,7 +193,7 @@ class _SecurityFormState extends State<SecurityForm> {
                 fontFamily: 'Poppins',
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: DashColors.text,
+                color: DashColors.textPrimary,
               ),
             ),
             const SizedBox(height: 18),
