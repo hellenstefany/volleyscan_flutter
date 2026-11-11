@@ -89,6 +89,13 @@ class AppRadii {
   static const double authCard = 20.0; // .login-container: 20px
 }
 
+class AppSpacing {
+  static const double dashCardGap = 12.0;
+  static const double dashGap = 14.0;
+  static const double dashSectionGap = 20.0;
+  static const EdgeInsets dashCardPadding = EdgeInsets.all(16);
+}
+
 class AppShadows {
   /// `.login-container`: `0 15px 40px rgba(0, 0, 0, .3)`
   static const List<BoxShadow> authCard = [

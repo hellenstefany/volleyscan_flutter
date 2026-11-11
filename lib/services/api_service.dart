@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/dashboard_data.dart';
+import '../models/progreso_atleta_data.dart';
 import '../screens/login_screen.dart';
 import '../theme/app_theme.dart';
 
@@ -419,24 +421,42 @@ class ApiService {
       Map<String, dynamic>.from(await get('/usuario/perfil/') as Map);
 
   /// Obtiene los datos principales del dashboard del atleta (`GET /api/usuario/dashboard/`).
-  Future<Map<String, dynamic>> dashboardUsuario() async =>
-      Map<String, dynamic>.from(await get('/usuario/dashboard/') as Map);
+  Future<DashboardResponse> dashboardUsuario() async {
+    final data = await get('/usuario/dashboard/');
+    return DashboardResponse.fromJson(Map<String, dynamic>.from(data as Map));
+  }
 
   /// Obtiene el progreso completo del deportista (`GET /api/ia/progreso?tz=...`).
   /// `tz` equivale a `new Date().getTimezoneOffset()` en JS (minutos de desfase UTC -> local).
-  Future<Map<String, dynamic>> progresoAtleta({int? tzOffsetMinutes}) async {
+  Future<ProgresoAtletaResponse> progresoAtleta({int? tzOffsetMinutes}) async {
     final tz = tzOffsetMinutes ?? -DateTime.now().timeZoneOffset.inMinutes;
-    return Map<String, dynamic>.from(await get('/ia/progreso?tz=$tz') as Map);
+    final data = await get('/ia/progreso?tz=$tz');
+    return ProgresoAtletaResponse.fromJson(
+      Map<String, dynamic>.from(data as Map),
+    );
   }
 
   /// Obtiene el contador de avisos/notificaciones sin leer (`GET /api/ia/avisos/contador`).
-  Future<int> contadorAvisos({bool todas = true}) async {
+  Future<AvisosContadorResponse> contadorAvisos({bool todas = true}) async {
     final query = todas ? '?todas=1' : '';
     final data = await get('/ia/avisos/contador$query');
-    if (data is Map && data['noLeidas'] != null) {
-      return int.tryParse(data['noLeidas'].toString()) ?? 0;
+    if (data is Map) {
+      return AvisosContadorResponse.fromJson(Map<String, dynamic>.from(data));
     }
-    return 0;
+    return const AvisosContadorResponse(noLeidas: 0);
+  }
+
+  /// Convierte URL relativa `/media/...` en absoluta respecto al host del backend.
+  static String? resolveMediaUrl(String? rawUrl) {
+    if (rawUrl == null) return null;
+    final url = rawUrl.trim();
+    if (url.isEmpty) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    final apiBase = baseUrl;
+    final hostBase = apiBase.endsWith('/api')
+        ? apiBase.substring(0, apiBase.length - 4)
+        : apiBase;
+    return url.startsWith('/') ? '$hostBase$url' : '$hostBase/$url';
   }
 }
 

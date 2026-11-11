@@ -101,7 +101,7 @@ class StatCard extends StatelessWidget {
                                 size: 12,
                                 color: deltaPositive
                                     ? DashColors.green
-                                    : const Color(0xFFF87171),
+                                    : DashColors.deltaDown,
                               ),
                               const SizedBox(width: 2),
                               Text(
@@ -112,7 +112,7 @@ class StatCard extends StatelessWidget {
                                   fontWeight: FontWeight.w600,
                                   color: deltaPositive
                                       ? DashColors.green
-                                      : const Color(0xFFF87171),
+                                      : DashColors.deltaDown,
                                 ),
                               ),
                             ],

@@ -31,9 +31,17 @@ class DashColors {
   static const greenGlow = Color(0x3322C55E); // --accent-green-glow
   static const greenTeal = Color(0xFF22D3A5); // --green
   static const greenStrong = Color(0xFF059669);
+  static const teal = Color(0xFF14B8A6); // --accent-teal (mi-progreso.module.css)
+  static const amber = Color(0xFFFBBF24); // --amber (mi-progreso.module.css)
   static const purple = Color(0xFFA855F7); // --accent-purple
+  static const coachPurple = Color(0xFF8B5CF6); // avatar entrenador gradient
   static const orange = Color(0xFFF97316); // --accent-orange
   static const red = Color(0xFFEF4444); // --red
+  static const deltaDown = Color(0xFFF87171); // .stat-card__delta--down / .down
+  static const errorText = Color(0xFFFCA5A5); // .err / .late
+  static const infoBadgeText = Color(0xFF93C5FD); // .go / .evIcon.analisis / .retry
+  static const successBadgeText = Color(0xFF86EFAC); // .pill.ok / .evIcon.ejercicio
+  static const checkIconDark = Color(0xFF052E16); // .day.on .dot
 
   // Bordes (globals.css)
   static Color get border => const Color(0x14FFFFFF); // rgba(255, 255, 255, .08)
