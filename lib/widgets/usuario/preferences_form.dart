@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../models/preferences_data.dart';
+import '../../services/api_service.dart';
+import '../../theme/app_theme.dart';
 import '../../theme/dash_colors.dart';
 import 'dash_card.dart';
 import 'form_action_buttons.dart';
 import 'profile_field.dart';
 
-/// Tarjeta "Preferencias": notificaciones (interruptores) y apariencia.
+/// Tarjeta "Preferencias" (`SeccionPreferencias.jsx` en Next):
+/// conectada a `GET | PUT /api/usuario/configuracion/`.
 class PreferencesForm extends StatefulWidget {
   const PreferencesForm({
     super.key,
@@ -21,11 +24,11 @@ class PreferencesForm extends StatefulWidget {
 }
 
 class _PreferencesFormState extends State<PreferencesForm> {
-  late bool _sessionReminder;
-  late bool _analysisCompleted;
-  late bool _newContent;
-  late String _language;
-  late String _units;
+  late bool _notifSesion;
+  late bool _notifAnalisis;
+  late bool _notifContenido;
+  late String _idioma;
+  late String _unidadMedida;
   bool _saving = false;
 
   @override
@@ -41,58 +44,56 @@ class _PreferencesFormState extends State<PreferencesForm> {
   }
 
   void _fill(PreferencesData d) {
-    _sessionReminder = d.sessionReminder;
-    _analysisCompleted = d.analysisCompleted;
-    _newContent = d.newContent;
-    _language = d.language;
-    _units = d.units;
+    _notifSesion = d.notifSesion;
+    _notifAnalisis = d.notifAnalisis;
+    _notifContenido = d.notifContenido;
+    _idioma = d.idioma;
+    _unidadMedida = d.unidadMedida;
   }
 
-  void _cancel() => setState(() => _fill(widget.initial));
+  void _cancel() {
+    setState(() => _fill(widget.initial));
+    showAppToast(context, 'Cambios descartados.', type: 'info');
+  }
 
   Future<void> _save() async {
     if (_saving) return;
 
     final data = PreferencesData(
-      sessionReminder: _sessionReminder,
-      analysisCompleted: _analysisCompleted,
-      newContent: _newContent,
-      language: _language,
-      units: _units,
+      notifSesion: _notifSesion,
+      notifAnalisis: _notifAnalisis,
+      notifContenido: _notifContenido,
+      idioma: _idioma,
+      unidadMedida: _unidadMedida,
     );
 
     setState(() => _saving = true);
     try {
       await widget.onSave(data);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preferencias guardadas correctamente')),
-      );
+    } on ApiException catch (err) {
+      if (mounted) showAppToast(context, err.message, type: 'error');
     } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No se pudieron guardar las preferencias. Intenta de nuevo.',
-          ),
-        ),
-      );
+      if (mounted) {
+        showAppToast(
+          context,
+          'Error al guardar las preferencias.',
+          type: 'error',
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
-  // ---------- UI ----------
-
   Widget _sectionTitle(String text) {
     return Text(
       text.toUpperCase(),
-      style: TextStyle(
+      style: const TextStyle(
         fontFamily: 'Poppins',
         fontSize: 10.5,
         fontWeight: FontWeight.w600,
         letterSpacing: 1,
-        color: Colors.white.withOpacity(0.45),
+        color: DashColors.muted,
       ),
     );
   }
@@ -107,11 +108,11 @@ class _PreferencesFormState extends State<PreferencesForm> {
       behavior: HitTestBehavior.opaque,
       onTap: () => onChanged(!value),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        padding: const EdgeInsets.fromLTRB(16, 13, 12, 13),
         decoration: BoxDecoration(
-          color: DashColors.cardDark,
+          color: DashColors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.07)),
+          border: Border.all(color: DashColors.border),
         ),
         child: Row(
           children: [
@@ -125,16 +126,16 @@ class _PreferencesFormState extends State<PreferencesForm> {
                       fontFamily: 'Poppins',
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: DashColors.text,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 11,
-                      color: Colors.white.withOpacity(0.45),
+                      color: DashColors.muted,
                     ),
                   ),
                 ],
@@ -155,21 +156,18 @@ class _PreferencesFormState extends State<PreferencesForm> {
     );
   }
 
-  Widget _pair(Widget a, Widget b, {double minWidth = 0}) {
+  Widget _pair(Widget a, Widget b) {
     return LayoutBuilder(
-      builder: (context, c) {
-        if (c.maxWidth >= minWidth) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: a),
-              const SizedBox(width: 12),
-              Expanded(child: b),
-            ],
-          );
-        }
-        return Column(children: [a, const SizedBox(height: 14), b]);
-      },
+      builder: (_, c) => c.maxWidth >= 330
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: a),
+                const SizedBox(width: 12),
+                Expanded(child: b),
+              ],
+            )
+          : Column(children: [a, const SizedBox(height: 14), b]),
     );
   }
 
@@ -186,7 +184,7 @@ class _PreferencesFormState extends State<PreferencesForm> {
               fontFamily: 'Poppins',
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: DashColors.text,
             ),
           ),
           const SizedBox(height: 18),
@@ -195,22 +193,22 @@ class _PreferencesFormState extends State<PreferencesForm> {
           _switchTile(
             title: 'Recordatorio de sesión',
             subtitle: '30 min antes del entrenamiento',
-            value: _sessionReminder,
-            onChanged: (v) => setState(() => _sessionReminder = v),
+            value: _notifSesion,
+            onChanged: (v) => setState(() => _notifSesion = v),
           ),
           const SizedBox(height: 10),
           _switchTile(
             title: 'Análisis completado',
             subtitle: 'Cuando la IA termine un análisis',
-            value: _analysisCompleted,
-            onChanged: (v) => setState(() => _analysisCompleted = v),
+            value: _notifAnalisis,
+            onChanged: (v) => setState(() => _notifAnalisis = v),
           ),
           const SizedBox(height: 10),
           _switchTile(
             title: 'Nuevos contenidos',
             subtitle: 'Videos y ejercicios nuevos',
-            value: _newContent,
-            onChanged: (v) => setState(() => _newContent = v),
+            value: _notifContenido,
+            onChanged: (v) => setState(() => _notifContenido = v),
           ),
           const SizedBox(height: 22),
           _sectionTitle('Apariencia'),
@@ -218,19 +216,18 @@ class _PreferencesFormState extends State<PreferencesForm> {
           _pair(
             ProfileDropdown(
               label: 'Idioma',
-              value: _language,
-              items: PreferencesData.languages,
-              showArrow: false,
-              onChanged: (v) => setState(() => _language = v),
+              value: _idioma,
+              items: PreferencesData.idiomaLabels.keys.toList(),
+              itemLabels: PreferencesData.idiomaLabels,
+              onChanged: (v) => setState(() => _idioma = v),
             ),
             ProfileDropdown(
               label: 'Unidades',
-              value: _units,
-              items: PreferencesData.unitSystems,
-              showArrow: false,
-              onChanged: (v) => setState(() => _units = v),
+              value: _unidadMedida,
+              items: PreferencesData.unidadLabels.keys.toList(),
+              itemLabels: PreferencesData.unidadLabels,
+              onChanged: (v) => setState(() => _unidadMedida = v),
             ),
-            minWidth: 330,
           ),
           const SizedBox(height: 24),
           FormActionButtons(saving: _saving, onCancel: _cancel, onSave: _save),

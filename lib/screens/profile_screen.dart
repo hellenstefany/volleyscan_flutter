@@ -36,13 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _uploadingPhoto = false;
 
   ProfileData? _profile;
-  PreferencesData _prefs = const PreferencesData(
-    sessionReminder: true,
-    analysisCompleted: true,
-    newContent: false,
-    language: 'Español',
-    units: 'Métrico (kg, m)',
-  );
+  PreferencesData _prefs = PreferencesData.defaults;
 
   static const _maxPhotoBytes = 2 * 1024 * 1024; // 2 MB
   static const _allowedExts = {'jpg', 'jpeg', 'png', 'webp'};
@@ -59,23 +53,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _loading = true;
       _error = null;
     });
-    try {
-      final data = await ApiService().obtenerPerfil();
-      if (!mounted) return;
-      setState(() {
-        _profile = data;
-        _loading = false;
-      });
-    } on ApiException catch (err) {
-      if (mounted) setState(() => (_loading = false, _error = err.message));
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = 'No se pudo cargar la información del perfil.';
-        });
-      }
-    }
+    final api = ApiService();
+    await Future.wait([
+      api.obtenerPerfil().then((data) {
+        if (mounted) {
+          setState(() {
+            _profile = data;
+            _loading = false;
+          });
+        }
+      }).catchError((Object err) {
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _error = err is ApiException
+                ? err.message
+                : 'No se pudo cargar la información del perfil.';
+          });
+        }
+      }),
+      api.obtenerConfiguracion().then((cfg) {
+        if (mounted) setState(() => _prefs = cfg);
+      }).catchError((_) {}),
+    ]);
   }
 
   Future<void> _saveProfile(ProfileData updated) async {
@@ -93,7 +93,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _savePreferences(PreferencesData data) async {
-    setState(() => _prefs = data);
+    final saved = await ApiService().actualizarConfiguracion(data);
+    if (!mounted) return;
+    setState(() => _prefs = saved);
+    showAppToast(context, '✓ Preferencias guardadas.', type: 'ok');
   }
 
   Future<String> _changePassword(String current, String next) {

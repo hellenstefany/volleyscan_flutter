@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/dashboard_data.dart';
+import '../models/preferences_data.dart';
 import '../models/profile_data.dart';
 import '../models/progreso_atleta_data.dart';
 import '../screens/login_screen.dart';
@@ -505,6 +506,22 @@ class ApiService {
   Future<void> eliminarFotoPerfil() async {
     await delete('/usuario/perfil/foto/');
     await updateStoredUsuario({'foto_url': null});
+  }
+
+  /// Obtiene las preferencias del usuario (`GET /api/usuario/configuracion/`).
+  Future<PreferencesData> obtenerConfiguracion() async {
+    final raw = Map<String, dynamic>.from(
+      await get('/usuario/configuracion/') as Map,
+    );
+    return PreferencesData.fromJson(raw);
+  }
+
+  /// Guarda las preferencias del usuario (`PUT /api/usuario/configuracion/`).
+  Future<PreferencesData> actualizarConfiguracion(PreferencesData prefs) async {
+    final raw = Map<String, dynamic>.from(
+      await put('/usuario/configuracion/', prefs.toJson()) as Map,
+    );
+    return PreferencesData.fromJson(raw);
   }
 
   /// Obtiene los datos principales del dashboard del atleta (`GET /api/usuario/dashboard/`).
