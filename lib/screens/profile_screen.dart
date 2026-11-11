@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import '../models/goals_data.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/preferences_data.dart';
 import '../models/profile_data.dart';
+import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 import '../theme/dash_colors.dart';
 import '../utils/bottom_nav_router.dart';
+import '../widgets/usuario/dash_card.dart';
 import '../widgets/usuario/dashboard_bottom_nav.dart';
-import '../widgets/usuario/goals_form.dart';
 import '../widgets/usuario/menu_button.dart';
 import '../widgets/usuario/personal_info_form.dart';
 import '../widgets/usuario/preferences_form.dart';
@@ -13,13 +15,11 @@ import '../widgets/usuario/profile_section_tabs.dart';
 import '../widgets/usuario/profile_summary_card.dart';
 import '../widgets/usuario/security_form.dart';
 
-/// Pantalla "Perfil de Usuario".
+/// Pantalla "Perfil de Usuario" alineada con `VolleyScan_Next/src/app/usuario/perfil/page.jsx`.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.userName = '', this.photoPath});
 
   final String userName;
-
-  /// Ruta de la foto (asset). Si es null o no existe, se muestran las iniciales.
   final String? photoPath;
 
   @override
@@ -28,88 +28,170 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _picker = ImagePicker();
+
   ProfileSection _section = ProfileSection.personal;
-  late ProfileData _profile;
-  late GoalsData _goals;
-  late PreferencesData _prefs;
+  bool _loading = true;
+  String? _error;
+  bool _uploadingPhoto = false;
+
+  ProfileData? _profile;
+  PreferencesData _prefs = const PreferencesData(
+    sessionReminder: true,
+    analysisCompleted: true,
+    newContent: false,
+    language: 'Español',
+    units: 'Métrico (kg, m)',
+  );
+
+  static const _maxPhotoBytes = 2 * 1024 * 1024; // 2 MB
+  static const _allowedExts = {'jpg', 'jpeg', 'png', 'webp'};
+  static const _allowedMimes = {'image/jpeg', 'image/png', 'image/webp'};
 
   @override
   void initState() {
     super.initState();
-    // TODO: cargar los datos reales del usuario desde tu backend.
-    _profile = ProfileData(
-      fullName: widget.userName,
-      email: 'usuario@volleyscan.com',
-      birthDate: DateTime(2002, 5, 15),
-      level: 'Intermedio',
-      weightKg: 72,
-      heightM: 1.80,
-      position: 'Opuesto',
-    );
-    _goals = const GoalsData(
-      mainGoal: 'Mejorar técnica de remate',
-      sessionsPerWeek: 4,
-      minutesPerSession: 45,
-      areas: ['Remate', 'Recepción'],
-    );
-    _prefs = const PreferencesData(
-      sessionReminder: true,
-      analysisCompleted: true,
-      newContent: false,
-      language: 'Español',
-      units: 'Métrico (kg, m)',
-    );
+    _cargarPerfil();
   }
 
-  Future<void> _saveProfile(ProfileData data) async {
-    // TODO: enviar `data` por HTTPS a tu backend.
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    setState(() => _profile = data);
+  Future<void> _cargarPerfil() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await ApiService().obtenerPerfil();
+      if (!mounted) return;
+      setState(() {
+        _profile = data;
+        _loading = false;
+      });
+    } on ApiException catch (err) {
+      if (mounted) setState(() => (_loading = false, _error = err.message));
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = 'No se pudo cargar la información del perfil.';
+        });
+      }
+    }
   }
 
-  Future<void> _saveGoals(GoalsData data) async {
-    // TODO: enviar `data` por HTTPS a tu backend.
-    await Future.delayed(const Duration(seconds: 1));
+  Future<void> _saveProfile(ProfileData updated) async {
+    final current = _profile;
+    if (current == null) return;
+    final cambios = updated.diffFrom(current);
+    if (cambios.isEmpty) {
+      showAppToast(context, 'No hay cambios para guardar.', type: 'info');
+      return;
+    }
+    final saved = await ApiService().actualizarPerfil(cambios);
     if (!mounted) return;
-    setState(() => _goals = data);
+    setState(() => _profile = saved);
+    showAppToast(context, '✓ Información personal guardada.', type: 'ok');
   }
 
   Future<void> _savePreferences(PreferencesData data) async {
-    // TODO: enviar `data` por HTTPS a tu backend.
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
     setState(() => _prefs = data);
   }
 
-  Future<void> _changePassword(String current, String next) async {
-    // TODO: enviar la contraseña actual y la nueva por HTTPS a tu backend.
-    await Future.delayed(const Duration(seconds: 1));
-  }
-
-  Future<void> _deleteAccount() async {
-    // TODO: pedir a tu backend que elimine la cuenta y cerrar la sesión.
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    Navigator.of(context).popUntil((route) => route.isFirst);
-  }
-
-  void _changePhoto() {
-    // TODO: elegir una foto (por ejemplo con el paquete image_picker).
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cambiar foto estará disponible pronto')),
+  Future<String> _changePassword(String current, String next) {
+    return ApiService().cambiarPasswordPerfil(
+      passwordActual: current,
+      passwordNueva: next,
     );
   }
+
+  Future<void> _changePhoto() async {
+    if (_uploadingPhoto || _profile == null) return;
+    final XFile? file = await _picker.pickImage(source: ImageSource.gallery);
+    if (file == null || !mounted) return;
+
+    final ext = file.name.contains('.')
+        ? file.name.split('.').last.toLowerCase()
+        : '';
+    final mime = (file.mimeType ?? '').toLowerCase();
+    final validType =
+        _allowedExts.contains(ext) ||
+        (mime.isNotEmpty && _allowedMimes.contains(mime));
+    if (!validType) {
+      showAppToast(
+        context,
+        'Formato no permitido. Usa JPG, PNG o WEBP.',
+        type: 'error',
+      );
+      return;
+    }
+
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    if (bytes.length > _maxPhotoBytes) {
+      showAppToast(context, 'La imagen no puede superar 2 MB.', type: 'error');
+      return;
+    }
+
+    setState(() => _uploadingPhoto = true);
+    try {
+      final fname = file.name.isNotEmpty ? file.name : 'foto.jpg';
+      final nuevaUrl = await ApiService().subirFotoPerfil(
+        bytes: bytes,
+        filename: fname,
+      );
+      if (!mounted) return;
+      setState(() => _profile = _profile!.copyWith(fotoUrl: nuevaUrl));
+      showAppToast(context, '✓ Foto actualizada.', type: 'ok');
+    } on ApiException catch (err) {
+      if (mounted) showAppToast(context, err.message, type: 'error');
+    } catch (_) {
+      if (mounted) {
+        showAppToast(context, 'Error al subir la foto.', type: 'error');
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
+    }
+  }
+
+  Future<void> _removePhoto() async {
+    if (_uploadingPhoto || _profile == null) return;
+    setState(() => _uploadingPhoto = true);
+    try {
+      await ApiService().eliminarFotoPerfil();
+      if (!mounted) return;
+      setState(() => _profile = _profile!.copyWith(clearFotoUrl: true));
+      showAppToast(context, 'Foto eliminada.', type: 'info');
+    } on ApiException catch (err) {
+      if (mounted) showAppToast(context, err.message, type: 'error');
+    } catch (_) {
+      if (mounted) {
+        showAppToast(context, 'No se pudo quitar la foto.', type: 'error');
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
+    }
+  }
+
+  String get _effectiveName {
+    if (_profile != null) return _profile!.fullName;
+    if (widget.userName.trim().isNotEmpty) return widget.userName.trim();
+    return 'Atleta';
+  }
+
+  String? get _effectivePhoto => _profile?.fotoUrl ?? widget.photoPath;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: DashColors.bg,
-      drawer: UserDrawer(selectedId: 'perfil', userName: widget.userName),
+      drawer: UserDrawer(
+        selectedId: 'perfil',
+        userName: _effectiveName,
+        photoUrl: _effectivePhoto,
+      ),
       bottomNavigationBar: DashboardBottomNav(
         currentIndex: 4,
-        onTap: (i) => goToTab(context, i, current: 4),
+        onTap: (i) => goToTab(context, i, current: 4, userName: _effectiveName),
       ),
       body: SafeArea(
         bottom: false,
@@ -117,27 +199,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             _header(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 520),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ProfileSummaryCard(
-                          name: _profile.fullName,
-                          level: _profile.level,
-                          photoPath: widget.photoPath,
-                        ),
-                        const SizedBox(height: 14),
-                        ProfileSectionTabs(
-                          selected: _section,
-                          onSelected: (s) => setState(() => _section = s),
-                        ),
-                        const SizedBox(height: 14),
-                        _content(),
-                      ],
+              child: RefreshIndicator(
+                color: DashColors.blueLight,
+                backgroundColor: DashColors.card,
+                onRefresh: _cargarPerfil,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: _buildBody(),
                     ),
                   ),
                 ),
@@ -149,13 +221,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildBody() {
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 80),
+        child: Center(
+          child: CircularProgressIndicator(color: DashColors.blueLight),
+        ),
+      );
+    }
+    if (_error != null || _profile == null) {
+      return DashCard(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: DashColors.red,
+              size: 38,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _error ?? 'No se pudo cargar el perfil.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: DashColors.text, fontSize: 13.5),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _cargarPerfil,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: DashColors.blueLight,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ProfileSummaryCard(
+          name: _profile!.fullName,
+          level: _profile!.nivel,
+          role: _profile!.rolLabel,
+          photoPath: _profile!.fotoUrl,
+        ),
+        const SizedBox(height: 14),
+        ProfileSectionTabs(
+          selected: _section,
+          onSelected: (s) => setState(() => _section = s),
+        ),
+        const SizedBox(height: 14),
+        _content(),
+      ],
+    );
+  }
+
   Widget _header() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
-        ),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: DashColors.border)),
       ),
       child: Row(
         children: [
@@ -167,7 +297,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color: DashColors.card,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                border: Border.all(color: DashColors.border),
               ),
               child: const Icon(
                 Icons.menu_rounded,
@@ -186,7 +316,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 fontFamily: 'Poppins',
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: DashColors.text,
               ),
             ),
           ),
@@ -199,20 +329,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     switch (_section) {
       case ProfileSection.personal:
         return PersonalInfoForm(
-          initial: _profile,
-          photoPath: widget.photoPath,
+          initial: _profile!,
+          uploadingPhoto: _uploadingPhoto,
           onSave: _saveProfile,
           onChangePhoto: _changePhoto,
+          onRemovePhoto: _removePhoto,
         );
-      case ProfileSection.goals:
-        return GoalsForm(initial: _goals, onSave: _saveGoals);
       case ProfileSection.preferences:
         return PreferencesForm(initial: _prefs, onSave: _savePreferences);
       case ProfileSection.security:
-        return SecurityForm(
-          onChangePassword: _changePassword,
-          onDeleteAccount: _deleteAccount,
-        );
+        return SecurityForm(onChangePassword: _changePassword);
     }
   }
 }

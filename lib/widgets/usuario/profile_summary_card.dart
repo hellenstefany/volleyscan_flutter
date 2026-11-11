@@ -1,39 +1,51 @@
 import 'package:flutter/material.dart';
+import '../../models/profile_data.dart';
 import '../../theme/dash_colors.dart';
 import 'dash_card.dart';
 import 'profile_avatar.dart';
 
-/// Tarjeta superior del perfil: foto, nombre, rol y nivel.
+/// Tarjeta superior del perfil (`.pf-user-card` en Next): foto, nombre, rol y insignia de nivel.
 class ProfileSummaryCard extends StatelessWidget {
   const ProfileSummaryCard({
     super.key,
     required this.name,
-    required this.level,
+    this.level,
     this.role = 'Deportista',
     this.photoPath,
   });
 
   final String name;
-  final String level;
+  final String? level;
   final String role;
   final String? photoPath;
 
-  static Color _levelColor(String level) {
-    switch (level) {
-      case 'Principiante':
+  static Color _levelColor(String? rawLevel) {
+    switch ((rawLevel ?? '').toLowerCase()) {
+      case 'principiante':
         return DashColors.green;
-      case 'Avanzado':
+      case 'intermedio':
+        return DashColors.yellow;
+      case 'avanzado':
         return DashColors.orange;
-      case 'Profesional':
-        return const Color(0xFFA855F7);
+      case 'profesional':
+        return DashColors.purple;
       default:
-        return const Color(0xFFFACC15);
+        return DashColors.blueLight;
     }
+  }
+
+  static String _levelLabel(String? rawLevel) {
+    final key = (rawLevel ?? '').toLowerCase();
+    return ProfileData.nivelLabels[key] ??
+        (rawLevel != null && rawLevel.trim().isNotEmpty
+            ? rawLevel.trim()
+            : 'Intermedio');
   }
 
   @override
   Widget build(BuildContext context) {
     final levelColor = _levelColor(level);
+    final levelText = _levelLabel(level);
 
     return SizedBox(
       width: double.infinity,
@@ -42,33 +54,36 @@ class ProfileSummaryCard extends StatelessWidget {
         child: Column(
           children: [
             SizedBox(
-              width: 104,
-              height: 104,
+              width: 100,
+              height: 100,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 100,
-                    height: 100,
+                    width: 96,
+                    height: 96,
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: DashColors.blueLight, width: 2),
+                      border: Border.all(
+                        color: DashColors.blueLight,
+                        width: 2.5,
+                      ),
                     ),
                     child: ProfileAvatar(
                       name: name,
                       photoPath: photoPath,
-                      size: 90,
+                      size: 88,
                     ),
                   ),
                   Positioned(
-                    right: 2,
+                    right: 4,
                     bottom: 4,
                     child: Container(
-                      width: 22,
-                      height: 22,
+                      width: 20,
+                      height: 20,
                       decoration: BoxDecoration(
-                        color: DashColors.blue,
+                        color: DashColors.blueLight,
                         shape: BoxShape.circle,
                         border: Border.all(color: DashColors.card, width: 3),
                       ),
@@ -84,15 +99,15 @@ class ProfileSummaryCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 19,
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: DashColors.text,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               role,
-              style: TextStyle(
+              style: const TextStyle(
                 fontFamily: 'Poppins',
                 fontSize: 12.5,
                 color: DashColors.muted,
@@ -102,12 +117,12 @@ class ProfileSummaryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
               decoration: BoxDecoration(
-                color: levelColor.withOpacity(0.1),
+                color: levelColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: levelColor.withOpacity(0.6)),
+                border: Border.all(color: levelColor.withValues(alpha: 0.55)),
               ),
               child: Text(
-                level.toUpperCase(),
+                levelText.toUpperCase(),
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 10.5,

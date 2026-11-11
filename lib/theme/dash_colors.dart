@@ -15,6 +15,7 @@ class DashColors {
 
   // Textos (globals.css)
   static const textPrimary = Color(0xFFFFFFFF); // --text-primary
+  static const text = Color(0xFFF1F5F9); // --text-1 / --texto
   static const text1 = Color(0xFFF1F5F9); // --text-1
   static const textSecondary = Color(0xFFCBD5E1); // --text-secondary
   static const textMuted = Color(0xFF94A3B8); // --text-muted / --text-2
@@ -33,6 +34,7 @@ class DashColors {
   static const greenStrong = Color(0xFF059669);
   static const teal = Color(0xFF14B8A6); // --accent-teal (mi-progreso.module.css)
   static const amber = Color(0xFFFBBF24); // --amber (mi-progreso.module.css)
+  static const yellow = Color(0xFFFACC15); // intermedio / buena (perfil)
   static const purple = Color(0xFFA855F7); // --accent-purple
   static const coachPurple = Color(0xFF8B5CF6); // avatar entrenador gradient
   static const orange = Color(0xFFF97316); // --accent-orange
@@ -44,9 +46,9 @@ class DashColors {
   static const checkIconDark = Color(0xFF052E16); // .day.on .dot
 
   // Bordes (globals.css)
-  static Color get border => const Color(0x14FFFFFF); // rgba(255, 255, 255, .08)
-  static Color get borderSubtle => const Color(0x0FFFFFFF); // rgba(255, 255, 255, .06)
-  static Color get border2 => const Color(0x1AFFFFFF); // rgba(255, 255, 255, .10)
-  static Color get muted => textMuted;
+  static const border = Color(0x14FFFFFF); // rgba(255, 255, 255, .08)
+  static const borderSubtle = Color(0x0FFFFFFF); // rgba(255, 255, 255, .06)
+  static const border2 = Color(0x1AFFFFFF); // rgba(255, 255, 255, .10)
+  static const muted = textMuted;
 }
 

@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/dashboard_data.dart';
+import '../models/profile_data.dart';
 import '../models/progreso_atleta_data.dart';
 import '../screens/login_screen.dart';
 import '../theme/app_theme.dart';
@@ -103,6 +104,14 @@ class ApiService {
     }
   }
 
+  /// Actualiza parcialmente el mapa `usuario` guardado en `flutter_secure_storage`
+  /// para que el Dashboard y el Drawer reflejen cambios de nombre, email o foto.
+  static Future<void> updateStoredUsuario(Map<String, dynamic> partial) async {
+    final current = await getUsuario() ?? <String, dynamic>{};
+    current.addAll(partial);
+    await saveUsuario(current);
+  }
+
   static Future<void> logout() async {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _userKey);
@@ -151,6 +160,9 @@ class ApiService {
     }
     if (body is String && body.isNotEmpty && !body.trimLeft().startsWith('<')) {
       return body;
+    }
+    if (statusCode == 413) {
+      return 'La imagen no puede superar 2 MB.';
     }
     if (statusCode == 429) {
       return 'Demasiados intentos. Espera un minuto.';
@@ -419,6 +431,81 @@ class ApiService {
 
   Future<Map<String, dynamic>> perfil() async =>
       Map<String, dynamic>.from(await get('/usuario/perfil/') as Map);
+
+  /// Obtiene los datos del perfil (`GET /api/usuario/perfil/`) y sincroniza la sesión local.
+  Future<ProfileData> obtenerPerfil() async {
+    final raw = Map<String, dynamic>.from(await get('/usuario/perfil/') as Map);
+    final data = ProfileData.fromJson(raw);
+    await updateStoredUsuario({
+      'nombre': data.nombre,
+      'apellido': data.apellido,
+      'email': data.email,
+      'nivel': data.nivel,
+      'foto_url': data.fotoUrl,
+    });
+    return data;
+  }
+
+  /// Actualiza el perfil (`PUT /api/usuario/perfil/`) enviando solo los campos modificados.
+  Future<ProfileData> actualizarPerfil(Map<String, dynamic> cambios) async {
+    final raw = Map<String, dynamic>.from(
+      await put('/usuario/perfil/', cambios) as Map,
+    );
+    final data = ProfileData.fromJson(raw);
+    await updateStoredUsuario({
+      'nombre': data.nombre,
+      'apellido': data.apellido,
+      'email': data.email,
+      'nivel': data.nivel,
+      'foto_url': data.fotoUrl,
+    });
+    return data;
+  }
+
+  /// Cambia la contraseña (`PUT /api/usuario/perfil/password/`).
+  Future<String> cambiarPasswordPerfil({
+    required String passwordActual,
+    required String passwordNueva,
+  }) async {
+    final data = await put('/usuario/perfil/password/', {
+      'password_actual': passwordActual,
+      'password_nueva': passwordNueva,
+    });
+    if (data is Map && data['mensaje'] != null) {
+      return data['mensaje'].toString();
+    }
+    return 'Contraseña actualizada.';
+  }
+
+  /// Sube la foto de perfil (`POST /api/usuario/perfil/foto/`) vía `multipart/form-data` (campo `"foto"`).
+  Future<String?> subirFotoPerfil({
+    required Uint8List bytes,
+    required String filename,
+  }) async {
+    return _sendRequest((headers) async {
+      final uri = Uri.parse('$baseUrl/usuario/perfil/foto/');
+      final req = http.MultipartRequest('POST', uri);
+      if (headers['Authorization'] != null) {
+        req.headers['Authorization'] = headers['Authorization']!;
+      }
+      req.headers['Accept'] = 'application/json';
+      req.files.add(
+        http.MultipartFile.fromBytes('foto', bytes, filename: filename),
+      );
+      final streamed = await req.send();
+      return http.Response.fromStream(streamed);
+    }).then((body) async {
+      final fotoUrl = (body is Map) ? body['foto_url']?.toString() : null;
+      await updateStoredUsuario({'foto_url': fotoUrl});
+      return fotoUrl;
+    });
+  }
+
+  /// Quita la foto de perfil (`DELETE /api/usuario/perfil/foto/`).
+  Future<void> eliminarFotoPerfil() async {
+    await delete('/usuario/perfil/foto/');
+    await updateStoredUsuario({'foto_url': null});
+  }
 
   /// Obtiene los datos principales del dashboard del atleta (`GET /api/usuario/dashboard/`).
   Future<DashboardResponse> dashboardUsuario() async {

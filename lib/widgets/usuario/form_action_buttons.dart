@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/dash_colors.dart';
 
-/// Botones "Cancelar" y "Guardar cambios" de los formularios del perfil.
+/// Botones "Cancelar" y "Guardar cambios" de los formularios del perfil (`.pf-acciones` en Next).
 class FormActionButtons extends StatelessWidget {
   const FormActionButtons({
     super.key,
@@ -22,15 +22,15 @@ class FormActionButtons extends StatelessWidget {
       children: [
         Expanded(
           child: SizedBox(
-            height: 46,
+            height: 44,
             child: OutlinedButton(
               onPressed: saving ? null : onCancel,
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: DashColors.cardDark,
-                side: BorderSide(color: Colors.white.withOpacity(0.12)),
+                foregroundColor: DashColors.muted,
+                backgroundColor: DashColors.surface,
+                side: const BorderSide(color: DashColors.border),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: const Text(
@@ -38,32 +38,33 @@ class FormActionButtons extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           flex: 2,
           child: SizedBox(
-            height: 46,
+            height: 44,
             child: ElevatedButton(
               onPressed: saving ? null : onSave,
               style: ElevatedButton.styleFrom(
                 backgroundColor: DashColors.blueLight,
-                disabledBackgroundColor: DashColors.blueLight.withOpacity(0.6),
+                disabledBackgroundColor:
+                    DashColors.blueLight.withValues(alpha: 0.55),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: saving
                   ? const SizedBox(
-                      width: 20,
-                      height: 20,
+                      width: 18,
+                      height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: Colors.white,
