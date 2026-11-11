@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:volleyscan_mobile/screens/dashboard_screen.dart';
+import 'package:volleyscan_mobile/screens/entrenador/entrenador_shell.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/auth/auth_logo.dart';
@@ -69,6 +70,32 @@ class _LoginScreenState extends State<LoginScreen> {
     return emailErr == null && passErr == null;
   }
 
+  /// Redirige según el valor real de `usuario.rol` en el backend (`atleta`, `entrenador`, `admin`).
+  void _redirigirPorRol(Map<String, dynamic> usuario) {
+    final rol = (usuario['rol'] ?? '').toString().trim().toLowerCase();
+
+    switch (rol) {
+      case 'entrenador':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const EntrenadorShell()),
+        );
+      case 'admin':
+        // En espera de decidir qué pantalla usar para 'admin' en Flutter.
+        showAppToast(
+          context,
+          'Sesión iniciada como administrador (${usuario['email'] ?? ''}).',
+          type: 'info',
+        );
+      case 'atleta':
+      default:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+    }
+  }
+
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
     if (_loading) return;
@@ -81,18 +108,47 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await ApiService().login(_emailCtrl.text.trim(), _passCtrl.text);
-      if (!mounted) return;
-      showAppToast(context, '✓ Bienvenido/a. Redirigiendo…', type: 'success');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      final usuario = await ApiService().login(
+        _emailCtrl.text.trim(),
+        _passCtrl.text,
       );
-    } catch (e) {
+      if (!mounted) return;
+
+      final nombre = (usuario['nombre'] ?? '').toString().trim();
+      showAppToast(
+        context,
+        '✓ Bienvenido/a${nombre.isNotEmpty ? ', $nombre' : ''}. Redirigiendo…',
+        type: 'success',
+      );
+
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted) return;
+      _redirigirPorRol(usuario);
+    } on ApiException catch (err) {
+      if (!mounted) return;
+
+      if (err.isNoConnection) {
+        showAppToast(context, err.message, type: 'error');
+      } else if (err.isRateLimited) {
+        showAppToast(context, err.message, type: 'error');
+      } else if (err.isForbidden) {
+        // Muestra el mensaje exacto del backend (por ejemplo, falta de permiso del administrador o cuenta inactiva).
+        showAppToast(context, err.message, type: 'error');
+      } else if (err.statusCode == 400 || err.statusCode == 401) {
+        setState(() {
+          _emailError = 'Correo o contraseña incorrectos.';
+          _passError = 'Correo o contraseña incorrectos.';
+          _passCtrl.clear();
+        });
+        showAppToast(context, err.message, type: 'error');
+      } else {
+        showAppToast(context, err.message, type: 'error');
+      }
+    } catch (_) {
       if (!mounted) return;
       showAppToast(
         context,
-        e.toString().replaceFirst('Exception: ', ''),
+        'No se pudo conectar con el servidor.',
         type: 'error',
       );
     } finally {

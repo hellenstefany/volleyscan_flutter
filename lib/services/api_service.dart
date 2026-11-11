@@ -1,65 +1,296 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../screens/login_screen.dart';
+import '../theme/app_theme.dart';
+
+/// Excepción estructurada para errores de la API (equivalente a `ErrorApi` / `ApiError` en Next).
+class ApiException implements Exception {
+  /// Código HTTP de la respuesta, o `0` cuando no hubo conexión con el servidor.
+  final int statusCode;
+
+  /// Mensaje legible (extraído de `detail` del backend o mensaje por defecto).
+  final String message;
+
+  /// Cuerpo completo decodificado de la respuesta (por ejemplo errores por campo).
+  final dynamic data;
+
+  const ApiException({
+    required this.statusCode,
+    required this.message,
+    this.data,
+  });
+
+  bool get isNoConnection => statusCode == 0;
+  bool get isUnauthorized => statusCode == 401;
+  bool get isForbidden => statusCode == 403;
+  bool get isRateLimited => statusCode == 429;
+  bool get isInvalidCredentials =>
+      statusCode == 400 || statusCode == 401 || statusCode == 403;
+
+  @override
+  String toString() => message;
+}
+
 class ApiService {
-  // Chrome (Flutter Web):  http://127.0.0.1:8000/api
-  // Emulador Android:      http://10.0.2.2:8000/api
-  // Celular físico:        http://IP_DE_TU_PC:8000/api
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  /// Permite sobreescribir la URL base al compilar/ejecutar:
+  /// `flutter run --dart-define=API_URL=http://192.168.1.50:8000/api`
+  static const String _envBaseUrl = String.fromEnvironment('API_URL');
+
+  /// URL base:
+  /// - Si se pasa `--dart-define=API_URL=...`, usa ese valor.
+  /// - En Android (emulador): `http://10.0.2.2:8000/api`
+  /// - En Web / Windows / iOS Simulator: `http://127.0.0.1:8000/api`
+  static String get baseUrl {
+    if (_envBaseUrl.isNotEmpty) {
+      return _envBaseUrl.endsWith('/')
+          ? _envBaseUrl.substring(0, _envBaseUrl.length - 1)
+          : _envBaseUrl;
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8000/api';
+    }
+    return 'http://127.0.0.1:8000/api';
+  }
+
+  /// Key global de navegación para redirigir al Login cuando vence el JWT (401).
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
   static const _storage = FlutterSecureStorage();
+  static const _tokenKey = 'access';
+  static const _userKey = 'usuario';
+  static const _timeout = Duration(seconds: 15);
 
-  // ---------- Token ----------
-  static Future<String?> getToken() => _storage.read(key: 'access');
-  static Future<void> saveToken(String t) =>
-      _storage.write(key: 'access', value: t);
-  static Future<void> logout() => _storage.delete(key: 'access');
+  // ---------- Sesión segura (JWT + Usuario) ----------
 
-  static Future<Map<String, String>> _headers() async {
-    final t = await getToken();
+  static Future<String?> getToken() => _storage.read(key: _tokenKey);
+
+  static Future<void> saveToken(String token) =>
+      _storage.write(key: _tokenKey, value: token);
+
+  static Future<void> saveUsuario(Map<String, dynamic> usuario) =>
+      _storage.write(key: _userKey, value: jsonEncode(usuario));
+
+  static Future<Map<String, dynamic>?> getUsuario() async {
+    final raw = await _storage.read(key: _userKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> saveSession(Map<String, dynamic> data) async {
+    final access = data['access']?.toString();
+    if (access != null && access.isNotEmpty) {
+      await saveToken(access);
+    }
+    final usuario = data['usuario'];
+    if (usuario is Map) {
+      await saveUsuario(Map<String, dynamic>.from(usuario));
+    }
+  }
+
+  static Future<void> logout() async {
+    await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _userKey);
+  }
+
+  // ---------- Cabeceras y manejo de respuestas ----------
+
+  static Future<Map<String, String>> _headers({bool includeAuth = true}) async {
+    final token = includeAuth ? await getToken() : null;
     return {
+      'Accept': 'application/json',
       'Content-Type': 'application/json; charset=UTF-8',
-      if (t != null) 'Authorization': 'Bearer $t',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
   }
 
-  static dynamic _handle(http.Response r) {
-    final body = r.body.isEmpty ? null : jsonDecode(utf8.decode(r.bodyBytes));
-    if (r.statusCode >= 200 && r.statusCode < 300) return body;
-    final msg = (body is Map && body['detail'] != null)
-        ? body['detail']
-        : r.body;
-    throw Exception(msg.toString());
+  static dynamic _decodeBody(http.Response r) {
+    if (r.statusCode == 204 || r.bodyBytes.isEmpty) return null;
+    final text = utf8.decode(r.bodyBytes);
+    if (text.trim().isEmpty) return null;
+    try {
+      return jsonDecode(text);
+    } catch (_) {
+      return text;
+    }
   }
 
-  // ---------- Métodos genéricos (la ruta se escribe completa, con o sin "/") ----------
-  Future<dynamic> get(String path) async => _handle(
-    await http.get(Uri.parse('$baseUrl$path'), headers: await _headers()),
-  );
+  static String _extractErrorMessage(int statusCode, dynamic body) {
+    if (body is Map) {
+      if (body['detail'] != null && body['detail'].toString().isNotEmpty) {
+        return body['detail'].toString();
+      }
+      if (body['non_field_errors'] is List &&
+          (body['non_field_errors'] as List).isNotEmpty) {
+        return (body['non_field_errors'] as List).first.toString();
+      }
+      for (final entry in body.entries) {
+        final val = entry.value;
+        if (val is List && val.isNotEmpty) {
+          return val.first.toString();
+        }
+        if (val is String && val.isNotEmpty) {
+          return val;
+        }
+      }
+    }
+    if (body is String && body.isNotEmpty && !body.trimLeft().startsWith('<')) {
+      return body;
+    }
+    if (statusCode == 429) {
+      return 'Demasiados intentos. Espera un minuto.';
+    }
+    if (statusCode == 401) {
+      return 'Sesión expirada o credenciales inválidas.';
+    }
+    if (statusCode == 403) {
+      return 'No tienes permiso para realizar esta acción.';
+    }
+    return 'Error del servidor (código $statusCode).';
+  }
 
-  Future<dynamic> post(String path, Map<String, dynamic> body) async => _handle(
-    await http.post(
-      Uri.parse('$baseUrl$path'),
-      headers: await _headers(),
-      body: jsonEncode(body),
-    ),
-  );
+  static Future<dynamic> _handleResponse(
+    http.Response r, {
+    required bool hadAuthToken,
+  }) async {
+    final body = _decodeBody(r);
+    if (r.statusCode >= 200 && r.statusCode < 300) {
+      return body;
+    }
 
-  Future<dynamic> put(String path, Map<String, dynamic> body) async => _handle(
-    await http.put(
-      Uri.parse('$baseUrl$path'),
-      headers: await _headers(),
-      body: jsonEncode(body),
-    ),
-  );
+    // Si la petición llevaba un JWT y el backend responde 401 (token vencido o sesión cerrada),
+    // limpiamos el almacenamiento seguro y redirigimos al Login.
+    if (r.statusCode == 401 && hadAuthToken) {
+      await logout();
+      final navState = navigatorKey.currentState;
+      final ctx = navigatorKey.currentContext;
+      if (ctx != null && ctx.mounted) {
+        showAppToast(
+          ctx,
+          'Tu sesión ha expirado. Inicia sesión nuevamente.',
+          type: 'error',
+        );
+      }
+      navState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
 
-  Future<dynamic> delete(String path) async => _handle(
-    await http.delete(Uri.parse('$baseUrl$path'), headers: await _headers()),
-  );
+    throw ApiException(
+      statusCode: r.statusCode,
+      message: _extractErrorMessage(r.statusCode, body),
+      data: body,
+    );
+  }
 
-  // ---------- Compatibilidad con tus métodos anteriores ----------
-  // endpoint = 'usuario/rutinas'  ->  GET /api/usuario/rutinas/
+  Future<dynamic> _sendRequest(
+    Future<http.Response> Function(Map<String, String> headers) requestFn, {
+    bool includeAuth = true,
+  }) async {
+    final headers = await _headers(includeAuth: includeAuth);
+    final hadAuthToken = headers.containsKey('Authorization');
+
+    try {
+      final response = await requestFn(headers).timeout(_timeout);
+      return await _handleResponse(response, hadAuthToken: hadAuthToken);
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw const ApiException(
+        statusCode: 0,
+        message:
+            'Tiempo de espera agotado al conectar con el servidor. Verifica que esté encendido.',
+      );
+    } on SocketException {
+      throw const ApiException(
+        statusCode: 0,
+        message:
+            'No se pudo conectar con el servidor. Revisa tu conexión y que el servidor esté encendido.',
+      );
+    } on http.ClientException {
+      throw const ApiException(
+        statusCode: 0,
+        message:
+            'No se pudo conectar con el servidor. Revisa que esté encendido y accesible.',
+      );
+    } catch (_) {
+      throw const ApiException(
+        statusCode: 0,
+        message: 'No se pudo conectar con el servidor.',
+      );
+    }
+  }
+
+  // ---------- Métodos HTTP genéricos (con o sin "/" según el endpoint) ----------
+
+  Future<dynamic> get(String path, {bool includeAuth = true}) => _sendRequest(
+        (headers) => http.get(Uri.parse('$baseUrl$path'), headers: headers),
+        includeAuth: includeAuth,
+      );
+
+  Future<dynamic> post(
+    String path,
+    Map<String, dynamic> body, {
+    bool includeAuth = true,
+  }) =>
+      _sendRequest(
+        (headers) => http.post(
+          Uri.parse('$baseUrl$path'),
+          headers: headers,
+          body: jsonEncode(body),
+        ),
+        includeAuth: includeAuth,
+      );
+
+  Future<dynamic> put(
+    String path,
+    Map<String, dynamic> body, {
+    bool includeAuth = true,
+  }) =>
+      _sendRequest(
+        (headers) => http.put(
+          Uri.parse('$baseUrl$path'),
+          headers: headers,
+          body: jsonEncode(body),
+        ),
+        includeAuth: includeAuth,
+      );
+
+  Future<dynamic> patch(
+    String path,
+    Map<String, dynamic> body, {
+    bool includeAuth = true,
+  }) =>
+      _sendRequest(
+        (headers) => http.patch(
+          Uri.parse('$baseUrl$path'),
+          headers: headers,
+          body: jsonEncode(body),
+        ),
+        includeAuth: includeAuth,
+      );
+
+  Future<dynamic> delete(String path, {bool includeAuth = true}) =>
+      _sendRequest(
+        (headers) => http.delete(Uri.parse('$baseUrl$path'), headers: headers),
+        includeAuth: includeAuth,
+      );
+
+  // ---------- Compatibilidad con métodos anteriores ----------
+
   Future<List<dynamic>> obtenerRegistros(String endpoint) async =>
       (await get('/$endpoint/')) as List<dynamic>;
 
@@ -72,30 +303,80 @@ class ApiService {
   }
 
   // ---------- Auth ----------
-  Future<void> login(String email, String password) async {
-    final data = await post('/auth/login', {
-      'email': email,
-      'password': password,
-    });
-    await saveToken(data['access']);
+
+  /// Inicia sesión contra `POST /api/auth/login` (sin barra final),
+  /// guarda `access` y `usuario` en `flutter_secure_storage` y devuelve el mapa `usuario`.
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    final data = await post(
+      '/auth/login',
+      {
+        'email': email.trim(),
+        'password': password,
+      },
+      includeAuth: false,
+    );
+    final map = Map<String, dynamic>.from(data as Map);
+    await saveSession(map);
+    return Map<String, dynamic>.from((map['usuario'] as Map?) ?? const {});
   }
 
-  Future<void> registro(
+  /// Obtiene el resumen del usuario actual desde `GET /api/auth/me`.
+  Future<Map<String, dynamic>> me() async {
+    final data = await get('/auth/me');
+    final usuario = Map<String, dynamic>.from(data as Map);
+    await saveUsuario(usuario);
+    return usuario;
+  }
+
+  /// Registra un nuevo atleta contra `POST /api/auth/registro`,
+  /// guarda la sesión y devuelve el mapa `usuario`.
+  Future<Map<String, dynamic>> registro(
     String nombre,
     String apellido,
     String email,
     String password,
   ) async {
-    final data = await post('/auth/registro', {
-      'nombre': nombre,
-      'apellido': apellido,
-      'email': email,
-      'password': password,
-    });
-    await saveToken(data['access']);
+    final data = await post(
+      '/auth/registro',
+      {
+        'nombre': nombre.trim(),
+        'apellido': apellido.trim(),
+        'email': email.trim(),
+        'password': password,
+      },
+      includeAuth: false,
+    );
+    final map = Map<String, dynamic>.from(data as Map);
+    await saveSession(map);
+    return Map<String, dynamic>.from((map['usuario'] as Map?) ?? const {});
+  }
+
+  /// Preparado para inicio de sesión con Google (`POST /api/auth/google`).
+  Future<Map<String, dynamic>> loginWithGoogle(String credential) async {
+    final data = await post(
+      '/auth/google',
+      {'credential': credential},
+      includeAuth: false,
+    );
+    final map = Map<String, dynamic>.from(data as Map);
+    await saveSession(map);
+    return Map<String, dynamic>.from((map['usuario'] as Map?) ?? const {});
+  }
+
+  /// Cierra la sesión en el servidor (`/api/usuario/dispositivos/cerrar-actual/`)
+  /// y limpia el almacenamiento seguro local.
+  Future<void> cerrarSesionCompleta() async {
+    try {
+      await post('/usuario/dispositivos/cerrar-actual/', const {});
+    } catch (_) {
+      // Si el token ya venció o no hay red, igual limpiamos localmente.
+    }
+    await logout();
   }
 
   // ---------- Perfil ----------
+
   Future<Map<String, dynamic>> perfil() async =>
-      Map<String, dynamic>.from(await get('/usuario/perfil/'));
+      Map<String, dynamic>.from(await get('/usuario/perfil/') as Map);
 }
+

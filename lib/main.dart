@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:volleyscan_mobile/screens/home_screen.dart';
+import 'services/api_service.dart';
 import 'theme/app_theme.dart';
-
-import 'screens/dashboard_screen.dart';
-import 'screens/entrenador/entrenador_shell.dart';
 
 void main() => runApp(const VolleyScanApp());
 
@@ -13,6 +11,7 @@ class VolleyScanApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: ApiService.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'VolleyScan AI',
       theme: buildTheme(),
@@ -33,3 +32,4 @@ class VolleyScanApp extends StatelessWidget {
     );
   }
 }
+
