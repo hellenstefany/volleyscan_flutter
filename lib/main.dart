@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:volleyscan_mobile/screens/home_screen.dart';
 import 'theme/app_theme.dart';
-
 import 'screens/dashboard_screen.dart';
 import 'screens/entrenador/entrenador_shell.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 
 void main() => runApp(const VolleyScanApp());
 
@@ -16,6 +17,10 @@ class VolleyScanApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'VolleyScan AI',
       theme: buildTheme(),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/registro': (context) => const RegisterScreen(),
+      },
       // Fondo con el degradado de la web y ancho máximo de móvil
       // (en Chrome se ve centrado como un teléfono).
       builder: (context, child) {
