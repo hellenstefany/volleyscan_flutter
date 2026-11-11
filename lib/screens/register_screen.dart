@@ -29,14 +29,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _lastCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
 
   bool _obscure = true;
+  bool _obscureConfirm = true;
   bool _loading = false;
 
   String? _nameError;
   String? _lastError;
   String? _emailError;
   String? _passError;
+  String? _confirmError;
 
   static final _nameFormatters = <TextInputFormatter>[
     LengthLimitingTextInputFormatter(100),
@@ -55,20 +58,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _lastCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _confirmCtrl.dispose();
     super.dispose();
   }
 
-  /// Validación cliente idéntica a `validate()` en `VolleyScan_Next/src/app/registro/page.jsx`.
+  /// Validación cliente idéntica a `validate()` en `VolleyScan_Next/src/app/registro/page.jsx`
+  /// más validación de confirmación de contraseña en el cliente.
   bool _validate() {
     String? nameErr;
     String? lastErr;
     String? emailErr;
     String? passErr;
+    String? confirmErr;
 
     final nombre = _nameCtrl.text.trim();
     final apellido = _lastCtrl.text.trim();
     final email = _emailCtrl.text.trim();
     final password = _passCtrl.text;
+    final confirm = _confirmCtrl.text;
 
     if (nombre.isEmpty) {
       nameErr = 'El nombre es obligatorio.';
@@ -86,18 +93,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } else if (password.length < 8) {
       passErr = 'Mínimo 8 caracteres.';
     }
+    if (confirm.isEmpty) {
+      confirmErr = 'Confirma tu contraseña.';
+    } else if (confirm != password) {
+      confirmErr = 'Las contraseñas no coinciden.';
+    }
 
     setState(() {
       _nameError = nameErr;
       _lastError = lastErr;
       _emailError = emailErr;
       _passError = passErr;
+      _confirmError = confirmErr;
     });
 
     return nameErr == null &&
         lastErr == null &&
         emailErr == null &&
-        passErr == null;
+        passErr == null &&
+        confirmErr == null;
   }
 
   /// Extrae el primer mensaje de un campo devuelto por el backend (`{ campo: ["msg"] }` o `"msg"`).
@@ -123,6 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _lastError = null;
       _emailError = null;
       _passError = null;
+      _confirmError = null;
     });
 
     try {
@@ -343,16 +358,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               controller: _passCtrl,
                               isPassword: true,
                               obscure: _obscure,
-                              textInputAction: TextInputAction.done,
+                              textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.newPassword],
                               inputFormatters: _passFormatters,
                               errorText: _passError,
                               onToggleObscure: () =>
                                   setState(() => _obscure = !_obscure),
+                              onChanged: (value) {
+                                final confirmText = _confirmCtrl.text;
+                                String? nextConfirmErr = _confirmError;
+                                if (confirmText.isNotEmpty) {
+                                  nextConfirmErr = confirmText == value
+                                      ? null
+                                      : 'Las contraseñas no coinciden.';
+                                }
+                                if (_passError != null ||
+                                    nextConfirmErr != _confirmError) {
+                                  setState(() {
+                                    _passError = null;
+                                    _confirmError = nextConfirmErr;
+                                  });
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Confirmar contraseña (solo validación cliente)
+                            AuthTextField(
+                              label: 'Confirmar contraseña',
+                              hint: '••••••••',
+                              controller: _confirmCtrl,
+                              isPassword: true,
+                              obscure: _obscureConfirm,
+                              textInputAction: TextInputAction.done,
+                              autofillHints: const [AutofillHints.newPassword],
+                              inputFormatters: _passFormatters,
+                              errorText: _confirmError,
+                              onToggleObscure: () => setState(
+                                () => _obscureConfirm = !_obscureConfirm,
+                              ),
                               onFieldSubmitted: (_) => _submit(),
-                              onChanged: (_) {
-                                if (_passError != null) {
-                                  setState(() => _passError = null);
+                              onChanged: (value) {
+                                final nextConfirmErr = value.isEmpty
+                                    ? null
+                                    : (value == _passCtrl.text
+                                        ? null
+                                        : 'Las contraseñas no coinciden.');
+                                if (nextConfirmErr != _confirmError) {
+                                  setState(
+                                    () => _confirmError = nextConfirmErr,
+                                  );
                                 }
                               },
                             ),
