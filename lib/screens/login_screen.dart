@@ -71,28 +71,40 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   /// Redirige según el valor real de `usuario.rol` en el backend (`atleta`, `entrenador`, `admin`).
-  void _redirigirPorRol(Map<String, dynamic> usuario) {
+  Future<void> _redirigirPorRol(Map<String, dynamic> usuario) async {
     final rol = (usuario['rol'] ?? '').toString().trim().toLowerCase();
 
-    switch (rol) {
-      case 'entrenador':
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const EntrenadorShell()),
-        );
-      case 'admin':
-        // En espera de decidir qué pantalla usar para 'admin' en Flutter.
-        showAppToast(
-          context,
-          'Sesión iniciada como administrador (${usuario['email'] ?? ''}).',
-          type: 'info',
-        );
-      case 'atleta':
-      default:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        );
+    if (rol == 'admin') {
+      await ApiService().cerrarSesionCompleta();
+      if (!mounted) return;
+      showAppToast(
+        context,
+        'Los administradores gestionan desde el panel web.',
+        type: 'info',
+      );
+      return;
+    }
+
+    final nombre = (usuario['nombre'] ?? '').toString().trim();
+    showAppToast(
+      context,
+      '✓ Bienvenido/a${nombre.isNotEmpty ? ', $nombre' : ''}. Redirigiendo…',
+      type: 'success',
+    );
+
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+
+    if (rol == 'entrenador') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const EntrenadorShell()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
     }
   }
 
@@ -113,17 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _passCtrl.text,
       );
       if (!mounted) return;
-
-      final nombre = (usuario['nombre'] ?? '').toString().trim();
-      showAppToast(
-        context,
-        '✓ Bienvenido/a${nombre.isNotEmpty ? ', $nombre' : ''}. Redirigiendo…',
-        type: 'success',
-      );
-
-      await Future.delayed(const Duration(milliseconds: 600));
-      if (!mounted) return;
-      _redirigirPorRol(usuario);
+      await _redirigirPorRol(usuario);
     } on ApiException catch (err) {
       if (!mounted) return;
 
