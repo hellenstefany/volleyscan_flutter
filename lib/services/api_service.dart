@@ -369,6 +369,39 @@ class ApiService {
     return Map<String, dynamic>.from((map['usuario'] as Map?) ?? const {});
   }
 
+  /// Solicita el enlace de recuperación de contraseña (`POST /api/auth/recuperar`).
+  /// El backend responde siempre 200 con `{ "mensaje": "..." }` exista o no la cuenta.
+  Future<String> recuperarPassword(String email) async {
+    final data = await post(
+      '/auth/recuperar',
+      {'email': email.trim().toLowerCase()},
+      includeAuth: false,
+    );
+    if (data is Map && data['mensaje'] != null) {
+      return data['mensaje'].toString();
+    }
+    return 'Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.';
+  }
+
+  /// Restablece la contraseña usando el token enviado por correo (`POST /api/auth/restablecer`).
+  Future<String> restablecerPassword({
+    required String token,
+    required String passwordNueva,
+  }) async {
+    final data = await post(
+      '/auth/restablecer',
+      {
+        'token': token.trim(),
+        'password_nueva': passwordNueva,
+      },
+      includeAuth: false,
+    );
+    if (data is Map && data['mensaje'] != null) {
+      return data['mensaje'].toString();
+    }
+    return 'Contraseña actualizada. Ya puedes iniciar sesión.';
+  }
+
   /// Cierra la sesión en el servidor (`/api/usuario/dispositivos/cerrar-actual/`)
   /// y limpia el almacenamiento seguro local.
   Future<void> cerrarSesionCompleta() async {
