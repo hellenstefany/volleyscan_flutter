@@ -31,7 +31,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  int _navIndex = 0;
+  final int _navIndex = 0;
 
   String _nombre = '';
 
@@ -43,14 +43,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _cargarNombre() async {
     try {
+      final guardado = await ApiService.getUsuario();
+      if (mounted && guardado != null) {
+        final nombreGuardado = (guardado['nombre'] ?? '').toString().trim();
+        if (nombreGuardado.isNotEmpty) {
+          setState(() => _nombre = nombreGuardado);
+        }
+      }
       final p = await ApiService().get('/usuario/perfil/');
-      if (mounted) setState(() => _nombre = (p['nombre'] ?? '').toString());
+      if (mounted && p is Map) {
+        final nombrePerfil = (p['nombre'] ?? '').toString().trim();
+        if (nombrePerfil.isNotEmpty) {
+          setState(() => _nombre = nombrePerfil);
+        }
+      }
     } catch (_) {
-      // Si falla, el saludo queda genérico.
+      // Si falla, el saludo usa widget.userName o el valor por defecto.
     }
   }
 
-  String get _displayName => _nombre.isNotEmpty ? _nombre : _displayName;
+  String get _displayName {
+    if (_nombre.isNotEmpty) return _nombre;
+    if (widget.userName.trim().isNotEmpty) return widget.userName.trim();
+    return 'Atleta';
+  }
 
   // TODO: reemplazar por los datos reales de tu backend.
   static const _progressTrend = <double>[
@@ -204,8 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   score: 87,
                                   // Pon aquí una imagen declarada en pubspec.yaml;
                                   // si no existe se muestra un placeholder.
-                                  imagePath:
-                                      'assets/images/ultimo_analisis.jpg',
+                                  imagePath: '',
                                 ),
                               ),
                               const SizedBox(width: 12),

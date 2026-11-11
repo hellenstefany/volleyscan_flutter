@@ -43,7 +43,7 @@ class LastAnalysisCard extends StatelessWidget {
                           fontFamily: 'Poppins',
                           fontSize: 12,
                           height: 1.3,
-                          color: Colors.white.withOpacity(0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                         ),
                       ),
                       Text(
@@ -92,11 +92,8 @@ class LastAnalysisCard extends StatelessWidget {
 
   Widget _thumbnail() {
     final placeholder = Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF12294D), Color(0xFF0C1A33)],
-        ),
-      ),
+      color: DashColors.card,
+      alignment: Alignment.center,
       child: const Icon(
         Icons.sports_volleyball,
         size: 28,
@@ -104,11 +101,13 @@ class LastAnalysisCard extends StatelessWidget {
       ),
     );
 
-    if (imagePath == null) return placeholder;
+    final path = imagePath?.trim() ?? '';
+    if (path.isEmpty) return placeholder;
+
     return Image.asset(
-      imagePath!,
+      path,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => placeholder,
+      errorBuilder: (_, _, _) => placeholder,
     );
   }
 }
@@ -132,7 +131,7 @@ class _ScoreRing extends StatelessWidget {
               strokeWidth: 3,
               strokeCap: StrokeCap.round,
               color: DashColors.green,
-              backgroundColor: Colors.white.withOpacity(0.1),
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
             ),
           ),
           Column(

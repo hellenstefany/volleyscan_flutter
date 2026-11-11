@@ -45,14 +45,15 @@ class ProfileAvatar extends StatelessWidget {
       ),
     );
 
-    final Widget image = photoPath == null
+    final path = photoPath?.trim() ?? '';
+    final Widget image = path.isEmpty
         ? fallback
         : Image.asset(
-            photoPath!,
+            path,
             width: size,
             height: size,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => fallback,
+            errorBuilder: (_, _, _) => fallback,
           );
 
     return cornerRadius == null

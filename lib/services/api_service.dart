@@ -67,6 +67,7 @@ class ApiService {
   static const _tokenKey = 'access';
   static const _userKey = 'usuario';
   static const _timeout = Duration(seconds: 15);
+  static bool _isHandlingUnauthorized = false;
 
   // ---------- Sesión segura (JWT + Usuario) ----------
 
@@ -171,22 +172,27 @@ class ApiService {
     }
 
     // Si la petición llevaba un JWT y el backend responde 401 (token vencido o sesión cerrada),
-    // limpiamos el almacenamiento seguro y redirigimos al Login.
-    if (r.statusCode == 401 && hadAuthToken) {
-      await logout();
-      final navState = navigatorKey.currentState;
-      final ctx = navigatorKey.currentContext;
-      if (ctx != null && ctx.mounted) {
-        showAppToast(
-          ctx,
-          'Tu sesión ha expirado. Inicia sesión nuevamente.',
-          type: 'error',
+    // limpiamos el almacenamiento seguro y redirigimos al Login una sola vez.
+    if (r.statusCode == 401 && hadAuthToken && !_isHandlingUnauthorized) {
+      _isHandlingUnauthorized = true;
+      try {
+        await logout();
+        final navState = navigatorKey.currentState;
+        final ctx = navigatorKey.currentContext;
+        if (ctx != null && ctx.mounted) {
+          showAppToast(
+            ctx,
+            'Tu sesión ha expirado. Inicia sesión nuevamente.',
+            type: 'error',
+          );
+        }
+        navState?.pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
         );
+      } finally {
+        _isHandlingUnauthorized = false;
       }
-      navState?.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
     }
 
     throw ApiException(

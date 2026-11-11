@@ -149,7 +149,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        MaterialPageRoute(
+          builder: (_) => DashboardScreen(userName: nombre),
+        ),
       );
     } on ApiException catch ( err) {
       if (!mounted) return;
