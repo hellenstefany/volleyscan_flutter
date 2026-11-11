@@ -17,7 +17,7 @@ void goToTab(
   BuildContext context,
   int index, {
   required int current,
-  String userName = 'Agustin',
+  String userName = '',
 }) {
   if (index == current) return;
 

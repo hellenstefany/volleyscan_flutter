@@ -36,6 +36,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final int _navIndex = 0;
 
   String _nombre = '';
+  String? _fotoUrl;
 
   // Estado de `/api/usuario/dashboard/`
   bool _loadingDash = true;
@@ -56,17 +57,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _inicializar();
   }
 
-  Future<void> _inicializar() async {
+  Future<void> _cargarUsuarioSesion() async {
     try {
       final guardado = await ApiService.getUsuario();
       if (mounted && guardado != null) {
         final nombreGuardado = (guardado['nombre'] ?? '').toString().trim();
-        if (nombreGuardado.isNotEmpty) {
-          setState(() => _nombre = nombreGuardado);
-        }
+        final fotoGuardada = guardado['foto_url']?.toString().trim();
+        setState(() {
+          if (nombreGuardado.isNotEmpty) _nombre = nombreGuardado;
+          _fotoUrl = (fotoGuardada != null && fotoGuardada.isNotEmpty)
+              ? fotoGuardada
+              : null;
+        });
       }
     } catch (_) {}
+  }
 
+  Future<void> _inicializar() async {
+    await _cargarUsuarioSesion();
     await _cargarTodoEnParalelo();
   }
 
@@ -176,11 +184,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _go(Widget screen) async {
     await Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
     if (mounted) {
+      await _cargarUsuarioSesion();
       _cargarTodoEnParalelo();
     }
   }
 
-  void _openProfile() => _go(ProfileScreen(userName: _displayName));
+  void _openProfile() =>
+      _go(ProfileScreen(userName: _displayName, photoPath: _fotoUrl));
 
   /// Barra inferior: 0 Inicio, 1 Rutinas, 2 Scan IA, 3 Historial, 4 Perfil.
   void _onNavTap(int index) {
@@ -242,6 +252,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: DashColors.bg,
       drawer: DashboardDrawer(
         userName: _displayName,
+        photoUrl: _fotoUrl,
         selectedId: 'panel',
         onSelect: _onMenuSelect,
       ),

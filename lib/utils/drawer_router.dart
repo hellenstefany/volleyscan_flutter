@@ -14,7 +14,7 @@ void goToMenuItem(
   BuildContext context,
   String id, {
   required String current,
-  String userName = 'Agustin',
+  String userName = '',
 }) {
   final nav = Navigator.of(context);
 

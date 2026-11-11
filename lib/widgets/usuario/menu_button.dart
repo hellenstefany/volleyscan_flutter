@@ -19,16 +19,19 @@ class UserDrawer extends StatelessWidget {
   const UserDrawer({
     super.key,
     required this.selectedId,
-    this.userName = 'Agustin',
+    this.userName = '',
+    this.photoUrl,
   });
 
   final String selectedId;
   final String userName;
+  final String? photoUrl;
 
   @override
   Widget build(BuildContext context) {
     return DashboardDrawer(
       userName: userName,
+      photoUrl: photoUrl,
       selectedId: selectedId,
       onSelect: (id) =>
           goToMenuItem(context, id, current: selectedId, userName: userName),

@@ -1,22 +1,34 @@
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
 import '../../theme/dash_colors.dart';
+import 'profile_avatar.dart';
 
 /// Menú lateral (las tres rayas): secciones, opciones y usuario al pie.
-class DashboardDrawer extends StatelessWidget {
+class DashboardDrawer extends StatefulWidget {
   const DashboardDrawer({
     super.key,
-    required this.userName,
+    this.userName = '',
+    this.photoUrl,
     this.userRole = 'usuario',
     this.selectedId = 'panel',
     this.onSelect,
   });
 
   final String userName;
+  final String? photoUrl;
   final String userRole;
   final String selectedId;
 
   /// Se llama con el id de la opción tocada (ej. 'rutinas', 'progreso').
   final ValueChanged<String>? onSelect;
+
+  @override
+  State<DashboardDrawer> createState() => _DashboardDrawerState();
+}
+
+class _DashboardDrawerState extends State<DashboardDrawer> {
+  String _sessionName = '';
+  String? _sessionPhoto;
 
   static const _bg = Color(0xFF0B1022);
   static const _accent = Color(0xFF8B5CF6);
@@ -43,6 +55,38 @@ class DashboardDrawer extends StatelessWidget {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadSessionUser();
+  }
+
+  Future<void> _loadSessionUser() async {
+    try {
+      final u = await ApiService.getUsuario();
+      if (!mounted || u == null) return;
+      final nombre = (u['nombre'] ?? '').toString().trim();
+      final apellido = (u['apellido'] ?? '').toString().trim();
+      final full = [nombre, apellido].where((s) => s.isNotEmpty).join(' ');
+      final foto = u['foto_url']?.toString().trim();
+      setState(() {
+        if (full.isNotEmpty) _sessionName = full;
+        if (foto != null && foto.isNotEmpty) _sessionPhoto = foto;
+      });
+    } catch (_) {}
+  }
+
+  String get _effectiveName {
+    if (_sessionName.isNotEmpty) return _sessionName;
+    if (widget.userName.trim().isNotEmpty) return widget.userName.trim();
+    return 'Atleta';
+  }
+
+  String? get _effectivePhoto =>
+      (widget.photoUrl != null && widget.photoUrl!.trim().isNotEmpty)
+          ? widget.photoUrl
+          : _sessionPhoto;
+
+  @override
   Widget build(BuildContext context) {
     return Drawer(
       width: 300,
@@ -52,7 +96,7 @@ class DashboardDrawer extends StatelessWidget {
         child: Column(
           children: [
             _header(context),
-            Divider(height: 1, color: Colors.white.withOpacity(0.08)),
+            Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -67,7 +111,7 @@ class DashboardDrawer extends StatelessWidget {
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1,
-                          color: Colors.white.withOpacity(0.45),
+                          color: Colors.white.withValues(alpha: 0.45),
                         ),
                       ),
                     ),
@@ -76,7 +120,7 @@ class DashboardDrawer extends StatelessWidget {
                 ],
               ),
             ),
-            Divider(height: 1, color: Colors.white.withOpacity(0.08)),
+            Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
             _footer(),
           ],
         ),
@@ -94,14 +138,16 @@ class DashboardDrawer extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: DashColors.cyan.withOpacity(0.25)),
+              border: Border.all(
+                color: DashColors.cyan.withValues(alpha: 0.25),
+              ),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.asset(
                 'assets/images/Logo.VS.jpg',
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
+                errorBuilder: (_, _, _) => const Icon(
                   Icons.sports_volleyball,
                   size: 26,
                   color: DashColors.cyan,
@@ -139,7 +185,7 @@ class DashboardDrawer extends StatelessWidget {
             icon: Icon(
               Icons.close_rounded,
               size: 22,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -148,7 +194,7 @@ class DashboardDrawer extends StatelessWidget {
   }
 
   Widget _tile(BuildContext context, _Item item) {
-    final active = item.id == selectedId;
+    final active = item.id == widget.selectedId;
 
     final content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -157,7 +203,7 @@ class DashboardDrawer extends StatelessWidget {
           Icon(
             item.icon,
             size: 20,
-            color: active ? Colors.white : Colors.white.withOpacity(0.6),
+            color: active ? Colors.white : Colors.white.withValues(alpha: 0.6),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -167,7 +213,9 @@ class DashboardDrawer extends StatelessWidget {
                 fontFamily: 'Poppins',
                 fontSize: 13.5,
                 fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-                color: active ? Colors.white : Colors.white.withOpacity(0.75),
+                color: active
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.75),
               ),
             ),
           ),
@@ -181,7 +229,7 @@ class DashboardDrawer extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () {
           Navigator.pop(context);
-          onSelect?.call(item.id);
+          widget.onSelect?.call(item.id);
         },
         child: active
             ? ClipRRect(
@@ -194,7 +242,7 @@ class DashboardDrawer extends StatelessWidget {
                   ),
                   child: Stack(
                     children: [
-                      Positioned(
+                      const Positioned(
                         left: 0,
                         top: 0,
                         bottom: 0,
@@ -212,46 +260,19 @@ class DashboardDrawer extends StatelessWidget {
   }
 
   Widget _footer() {
-    final parts = userName.trim().split(RegExp(r'\s+'));
-    final initials = parts
-        .where((p) => p.isNotEmpty)
-        .take(2)
-        .map((p) => p[0].toUpperCase())
-        .join();
-
+    final name = _effectiveName;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
-              ),
-            ),
-            child: Text(
-              initials,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-          ),
+          ProfileAvatar(name: name, photoPath: _effectivePhoto, size: 44),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  userName,
+                  name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -262,7 +283,7 @@ class DashboardDrawer extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  userRole,
+                  widget.userRole,
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 11,
@@ -280,7 +301,7 @@ class DashboardDrawer extends StatelessWidget {
               color: const Color(0xFF22C55E),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF22C55E).withOpacity(0.5),
+                  color: const Color(0xFF22C55E).withValues(alpha: 0.5),
                   blurRadius: 8,
                 ),
               ],

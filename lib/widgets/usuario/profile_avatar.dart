@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
 
-/// Foto de perfil. Si no hay imagen, muestra las iniciales sobre un degradado.
+/// Foto de perfil. Si no hay imagen o falla la carga, muestra las iniciales sobre un degradado.
+/// Soporta URLs de red (`http://`, `https://`), rutas relativas del backend (`/media/...`) y assets locales.
 /// Con [cornerRadius] es un cuadrado redondeado; sin él, un círculo.
 class ProfileAvatar extends StatelessWidget {
   const ProfileAvatar({
@@ -18,7 +20,8 @@ class ProfileAvatar extends StatelessWidget {
 
   String get _initials {
     final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
-    return parts.take(2).map((p) => p[0].toUpperCase()).join();
+    final res = parts.take(2).map((p) => p[0].toUpperCase()).join();
+    return res.isEmpty ? '?' : res;
   }
 
   @override
@@ -45,16 +48,30 @@ class ProfileAvatar extends StatelessWidget {
       ),
     );
 
-    final path = photoPath?.trim() ?? '';
-    final Widget image = path.isEmpty
-        ? fallback
-        : Image.asset(
-            path,
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => fallback,
-          );
+    final raw = photoPath?.trim() ?? '';
+    final Widget image;
+    if (raw.isEmpty) {
+      image = fallback;
+    } else if (raw.startsWith('http://') ||
+        raw.startsWith('https://') ||
+        raw.startsWith('/')) {
+      final resolved = ApiService.resolveMediaUrl(raw) ?? raw;
+      image = Image.network(
+        resolved,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
+      );
+    } else {
+      image = Image.asset(
+        raw,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
+      );
+    }
 
     return cornerRadius == null
         ? ClipOval(child: image)

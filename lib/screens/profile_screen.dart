@@ -15,7 +15,7 @@ import '../widgets/usuario/security_form.dart';
 
 /// Pantalla "Perfil de Usuario".
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, this.userName = 'Agustin', this.photoPath});
+  const ProfileScreen({super.key, this.userName = '', this.photoPath});
 
   final String userName;
 
@@ -154,7 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.06)),
+          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
         ),
       ),
       child: Row(
@@ -167,7 +167,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color: DashColors.card,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
               ),
               child: const Icon(
                 Icons.menu_rounded,
