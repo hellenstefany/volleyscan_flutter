@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/content_data.dart';
-import '../../theme/routine_colors.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/dash_colors.dart';
 
-/// Desplegable "Todos los temas".
+/// Desplegable "Todos los temas" (`.filter-btn` + `.filter-dropdown` en `contenido.css`).
 class ContentTopicDropdown extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onChanged;
@@ -13,55 +14,70 @@ class ContentTopicDropdown extends StatelessWidget {
     required this.onChanged,
   });
 
-  String _label(ContentTab t) => t.value == 'all' ? 'Todos los temas' : t.label;
+  String _label(ContentTab t) =>
+      t.value == 'all' ? 'Todos los temas' : t.label;
 
   @override
   Widget build(BuildContext context) {
     final tabs = ContentData.tabs;
-    final current = tabs.firstWhere((t) => t.value == selected);
+    final current = tabs.firstWhere(
+      (t) => t.value == selected,
+      orElse: () => tabs.first,
+    );
 
     return PopupMenuButton<String>(
       onSelected: onChanged,
-      offset: const Offset(0, 48),
-      color: RoutineColors.card,
+      offset: const Offset(0, 44),
+      color: DashColors.surface,
+      elevation: 10,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: RoutineColors.border),
+        borderRadius: BorderRadius.circular(AppRadii.sm),
+        side: const BorderSide(color: DashColors.border2),
       ),
       itemBuilder: (_) => [
         for (final t in tabs)
           PopupMenuItem<String>(
             value: t.value,
+            height: 40,
             child: Text(
               _label(t),
               style: TextStyle(
-                color: t.value == selected ? RoutineColors.blue : Colors.white,
+                fontFamily: 'Poppins',
+                fontSize: 13,
+                color: t.value == selected
+                    ? DashColors.blueLight
+                    : DashColors.textSecondary,
                 fontWeight: t.value == selected
-                    ? FontWeight.w700
+                    ? FontWeight.w600
                     : FontWeight.w400,
               ),
             ),
           ),
       ],
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: RoutineColors.cardDark,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: RoutineColors.border),
+          color: DashColors.surface,
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+          border: Border.all(color: DashColors.border2),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               _label(current),
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                color: DashColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             const Icon(
               Icons.keyboard_arrow_down_rounded,
-              size: 20,
-              color: Colors.white,
+              size: 18,
+              color: DashColors.textSecondary,
             ),
           ],
         ),
@@ -70,7 +86,7 @@ class ContentTopicDropdown extends StatelessWidget {
   }
 }
 
-/// Chips horizontales de categorías.
+/// Pestañas de categorías (`.category-tabs` / `.tab-btn` en `contenido.css`).
 class ContentCategoryTabs extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onSelect;
@@ -86,32 +102,37 @@ class ContentCategoryTabs extends StatelessWidget {
     final tabs = ContentData.tabs;
 
     return SizedBox(
-      height: 38,
+      height: 36,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: tabs.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 6),
         itemBuilder: (_, i) {
           final t = tabs[i];
           final active = t.value == selected;
           return GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () => onSelect(t.value),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: active ? RoutineColors.blue : RoutineColors.cardDark,
+                color: active ? DashColors.blueLight : DashColors.surface,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: active ? RoutineColors.blue : RoutineColors.border,
+                  color: active ? DashColors.blueLight : DashColors.border,
                 ),
               ),
               child: Text(
                 t.label,
                 style: TextStyle(
-                  color: active ? Colors.white : RoutineColors.textMuted,
-                  fontSize: 14,
-                  fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Poppins',
+                  color: active
+                      ? DashColors.textPrimary
+                      : DashColors.textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),

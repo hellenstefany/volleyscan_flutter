@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/content_data.dart';
 import '../models/dashboard_data.dart';
 import '../models/preferences_data.dart';
 import '../models/profile_data.dart';
@@ -548,6 +549,40 @@ class ApiService {
       return AvisosContadorResponse.fromJson(Map<String, dynamic>.from(data));
     }
     return const AvisosContadorResponse(noLeidas: 0);
+  }
+
+  // ---------- Contenido Educativo ----------
+
+  /// Obtiene el catálogo de videos educativos (`GET /api/usuario/contenido/`).
+  /// Acepta opcionalmente `categoria` (`saque`, `recepcion`, `bloqueo`, `pose`, `preparacion`).
+  Future<List<ContentVideo>> obtenerContenidos({String? categoria}) async {
+    final cat = categoria?.trim();
+    final query = (cat != null && cat.isNotEmpty && cat != 'all')
+        ? '?categoria=${Uri.encodeQueryComponent(cat)}'
+        : '';
+    final data = await get('/usuario/contenido/$query');
+    final List<dynamic> rawList;
+    if (data is List) {
+      rawList = data;
+    } else if (data is Map) {
+      rawList = (data['results'] ??
+              data['items'] ??
+              data['contenido'] ??
+              const <dynamic>[])
+          as List<dynamic>;
+    } else {
+      rawList = const <dynamic>[];
+    }
+    return rawList
+        .whereType<Map>()
+        .map((item) => ContentVideo.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+  }
+
+  /// Obtiene el detalle de un video educativo (`GET /api/usuario/contenido/<id>/`).
+  Future<ContentVideo> obtenerContenidoDetalle(int id) async {
+    final data = await get('/usuario/contenido/$id/');
+    return ContentVideo.fromJson(Map<String, dynamic>.from(data as Map));
   }
 
   /// Convierte URL relativa `/media/...` en absoluta respecto al host del backend.

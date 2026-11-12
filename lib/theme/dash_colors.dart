@@ -46,6 +46,11 @@ class DashColors {
   static const successBadgeText = Color(0xFF86EFAC); // .pill.ok / .evIcon.ejercicio
   static const checkIconDark = Color(0xFF052E16); // .day.on .dot
 
+  // Badges de categorías de Contenido (contenido.css)
+  static const badgeRecepcionText = Color(0xFF4ADE80); // .badge-recepcion
+  static const badgeBloqueoText = Color(0xFFC084FC); // .badge-bloqueo
+  static const badgePrepText = Color(0xFF2DD4BF); // .badge-preparacion
+
   // Bordes (globals.css & perfil.css)
   static const border = Color(0x14FFFFFF); // --border: rgba(255, 255, 255, .08)
   static const borderSubtle = Color(0x0FFFFFFF); // --border: rgba(255, 255, 255, .06)
