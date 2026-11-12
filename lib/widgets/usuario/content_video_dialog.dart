@@ -201,6 +201,13 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
       case _ModalState.ready:
         final ytId = video.youtubeId;
         if (ytId != null && ytId.isNotEmpty) {
+          if (!isYoutubePlayerSupported) {
+            return ContentYoutubeFallback(
+              thumbnailUrl: video.resolvedThumbnailUrl,
+              watchUrl: watchUrl,
+              onClose: () => Navigator.pop(context),
+            );
+          }
           return ContentYoutubePlayer(
             key: ValueKey('yt_player_${video.id}_$ytId'),
             youtubeId: ytId,
@@ -254,14 +261,8 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
 
   Widget _buildCopyLinkAction(String? watchUrl) {
     if (watchUrl == null) {
-      return const Text(
-        'Video próximamente.',
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          color: DashColors.textSecondary,
-          fontSize: 13.5,
-        ),
-      );
+      return const Text('Video próximamente.',
+          style: TextStyle(fontFamily: 'Poppins', color: DashColors.textSecondary, fontSize: 13.5));
     }
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadii.sm),

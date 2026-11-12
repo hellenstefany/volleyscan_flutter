@@ -1,9 +1,87 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/dash_colors.dart';
+import 'content_video_card.dart';
+
+/// Plataformas con implementación de WebView para `youtube_player_iframe` 6.0.2
+/// (pubspec del paquete: android, ios, macos y web). Windows y Linux no la tienen.
+bool get isYoutubePlayerSupported {
+  if (kIsWeb) return true;
+  switch (defaultTargetPlatform) {
+    case TargetPlatform.android:
+    case TargetPlatform.iOS:
+    case TargetPlatform.macOS:
+      return true;
+    default:
+      return false;
+  }
+}
+
+Future<void> openYoutubeExternally(String url) async {
+  final uri = Uri.tryParse(url);
+  if (uri == null) return;
+  try {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (_) {}
+}
+
+/// Respaldo para plataformas sin WebView: miniatura + botón "Abrir en YouTube".
+/// No instancia `YoutubePlayerController` ni `YoutubePlayer`.
+class ContentYoutubeFallback extends StatelessWidget {
+  final String? thumbnailUrl;
+  final String? watchUrl;
+  final VoidCallback? onClose;
+
+  const ContentYoutubeFallback({super.key, this.thumbnailUrl, this.watchUrl, this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    final url = watchUrl;
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(color: Colors.black),
+          VideoThumb(url: thumbnailUrl),
+          Container(color: Colors.black.withValues(alpha: 0.45)),
+          if (url != null && url.isNotEmpty)
+            Center(
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: DashColors.red,
+                  foregroundColor: DashColors.textPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.sm)),
+                ),
+                onPressed: () => openYoutubeExternally(url),
+                icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: const Text('Abrir en YouTube',
+                    style: TextStyle(fontFamily: 'Poppins', fontSize: 12.5, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          if (onClose != null)
+            Positioned(
+              right: 12,
+              top: 12,
+              child: GestureDetector(
+                onTap: onClose,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), shape: BoxShape.circle),
+                  child: const Icon(Icons.close_rounded, color: DashColors.textPrimary, size: 18),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Reproductor incrustado de YouTube en proporción 16:9 (`.video-modal__screen`).
 ///
@@ -61,14 +139,6 @@ class _ContentYoutubePlayerState extends State<ContentYoutubePlayer> {
     _controller.stopVideo();
     _controller.close();
     super.dispose();
-  }
-
-  Future<void> _openExternal(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null) return;
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {}
   }
 
   String _resolveErrorMessage(YoutubeError error) {
@@ -169,7 +239,7 @@ class _ContentYoutubePlayerState extends State<ContentYoutubePlayer> {
                       borderRadius: BorderRadius.circular(AppRadii.sm),
                     ),
                   ),
-                  onPressed: () => _openExternal(fallbackUrl),
+                  onPressed: () => openYoutubeExternally(fallbackUrl),
                   icon: const Icon(Icons.open_in_new_rounded, size: 16),
                   label: const Text(
                     'Abrir en YouTube',
