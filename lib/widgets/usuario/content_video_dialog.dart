@@ -5,9 +5,9 @@ import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/dash_colors.dart';
 import 'content_video_card.dart';
+import 'content_youtube_player.dart';
 
 /// Modal de detalle de contenido educativo (`.video-modal` en `contenido.css` y `page.jsx`).
-/// Consulta `GET /api/usuario/contenido/<id>/` al abrirse sin perder el filtro ni el scroll de la lista.
 Future<void> showContentVideoDialog(
   BuildContext context,
   ContentVideo initialVideo,
@@ -21,7 +21,6 @@ Future<void> showContentVideoDialog(
 
 class _ContentVideoDialog extends StatefulWidget {
   final ContentVideo initialVideo;
-
   const _ContentVideoDialog({required this.initialVideo});
 
   @override
@@ -46,9 +45,7 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
       _detailError = null;
     });
     try {
-      final fresh = await ApiService().obtenerContenidoDetalle(
-        widget.initialVideo.id,
-      );
+      final fresh = await ApiService().obtenerContenidoDetalle(widget.initialVideo.id);
       if (!mounted) return;
       setState(() {
         _video = fresh;
@@ -80,8 +77,7 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
     final video = _video;
     final key = video.categoria.trim().toLowerCase();
     final catLabel = ContentData.catLabel[key] ?? video.categoria;
-    final metaText =
-        video.hasDuration ? '$catLabel · ${video.duracion}' : catLabel;
+    final metaText = video.hasDuration ? '$catLabel · ${video.duracion}' : catLabel;
     final watchUrl = video.watchUrl;
 
     return Dialog(
@@ -99,7 +95,7 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildScreen(watchUrl),
+              _buildPlayerScreen(video, watchUrl),
               Padding(
                 padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
                 child: Column(
@@ -139,8 +135,8 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 14),
-                    _buildWatchAction(watchUrl),
+                    const SizedBox(height: 16),
+                    _buildCopyLinkAction(watchUrl),
                   ],
                 ),
               ),
@@ -151,28 +147,27 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
     );
   }
 
-  Widget _buildScreen(String? watchUrl) {
+  Widget _buildPlayerScreen(ContentVideo video, String? watchUrl) {
+    final ytId = video.youtubeId;
+    if (ytId != null && ytId.isNotEmpty) {
+      return ContentYoutubePlayer(
+        youtubeId: ytId,
+        thumbnailUrl: video.resolvedThumbnailUrl,
+        watchUrl: watchUrl,
+        onClose: () => Navigator.pop(context),
+      );
+    }
+
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: Stack(
         fit: StackFit.expand,
         children: [
           Container(color: Colors.black),
-          VideoThumb(url: _video.resolvedThumbnailUrl),
-          Container(color: Colors.black.withValues(alpha: 0.25)),
-          Center(
-            child: GestureDetector(
-              onTap: watchUrl != null ? () => _copyWatchUrl(watchUrl) : null,
-              child: Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: DashColors.textPrimary.withValues(alpha: 0.9),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.play_arrow_rounded, color: DashColors.bg, size: 36),
-              ),
-            ),
+          VideoThumb(url: video.resolvedThumbnailUrl),
+          Container(color: Colors.black.withValues(alpha: 0.35)),
+          const Center(
+            child: Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 56),
           ),
           if (_loadingDetail)
             const Positioned(
@@ -193,7 +188,7 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
+                  color: Colors.black.withValues(alpha: 0.6),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.close_rounded, color: DashColors.textPrimary, size: 18),
@@ -245,7 +240,7 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
     );
   }
 
-  Widget _buildWatchAction(String? watchUrl) {
+  Widget _buildCopyLinkAction(String? watchUrl) {
     if (watchUrl == null) {
       return const Text(
         'Video próximamente.',
@@ -256,7 +251,6 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
         ),
       );
     }
-    final label = _video.youtubeId != null ? 'Ver en YouTube ($watchUrl)' : watchUrl;
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadii.sm),
       onTap: () => _copyWatchUrl(watchUrl),
@@ -267,16 +261,16 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
           borderRadius: BorderRadius.circular(AppRadii.sm),
           border: Border.all(color: DashColors.border2),
         ),
-        child: Row(
+        child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.open_in_new_rounded, size: 16, color: DashColors.blueLight),
-            const SizedBox(width: 8),
+            Icon(Icons.copy_rounded, size: 16, color: DashColors.blueLight),
+            SizedBox(width: 8),
             Flexible(
               child: Text(
-                label,
+                'Copiar enlace del video',
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
                   color: DashColors.blueLight,
                   fontSize: 13,
