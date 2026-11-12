@@ -260,64 +260,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
         currentIndex: _navIndex,
         onTap: _onNavTap,
       ),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            DashboardHeader(
-              userName: _displayName,
-              notifications: _effectiveNotifications,
-              onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-              onBellTap: () => _go(const NotificationsScreen()),
-            ),
-            Expanded(
-              child: RefreshIndicator(
-                color: DashColors.blueLight,
-                backgroundColor: DashColors.card,
-                onRefresh: _cargarTodoEnParalelo,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 480),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          DashboardTopSummary(
-                            loading: _loadingDash,
-                            error: _errorDash,
-                            data: _dashData,
-                            progresoRachaActual: _progresoData?.racha.actual,
-                            onRetry: _cargarResumenDashboard,
-                            onOpenAnalysis: () => _go(const AnalysisScreen()),
-                            onOpenAiHistory: () => _go(const AiHistoryScreen()),
-                            onOpenRoutines: () => _go(const RoutinesScreen()),
-                          ),
-                          const SizedBox(height: AppSpacing.dashSectionGap),
-                          DashboardQuickAccess(
-                            onStartAnalysis: () => _go(const AnalysisScreen()),
-                            onViewHistory: () => _go(const HistoryScreen()),
-                            onDailyRoutine: () => _go(const RoutinesScreen()),
-                            onExercises: () => _go(const ContentScreen()),
-                          ),
-                          const SizedBox(height: 24),
-                          MiProgresoSection(
-                            loading: _loadingProgreso,
-                            error: _errorProgreso,
-                            datos: _progresoData,
-                            onRetry: _cargarProgreso,
-                            onOpenRoutines: () => _go(const RoutinesScreen()),
-                            onStartAnalysis: () => _go(const AnalysisScreen()),
-                          ),
-                        ],
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: AppGradients.userPanelBg),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              DashboardHeader(
+                userName: _displayName,
+                notifications: _effectiveNotifications,
+                onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+                onBellTap: () => _go(const NotificationsScreen()),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  color: DashColors.blueLight,
+                  backgroundColor: DashColors.card,
+                  onRefresh: _cargarTodoEnParalelo,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            DashboardTopSummary(
+                              loading: _loadingDash,
+                              error: _errorDash,
+                              data: _dashData,
+                              progresoRachaActual: _progresoData?.racha.actual,
+                              onRetry: _cargarResumenDashboard,
+                              onOpenAnalysis: () => _go(const AnalysisScreen()),
+                              onOpenAiHistory: () =>
+                                  _go(const AiHistoryScreen()),
+                              onOpenRoutines: () => _go(const RoutinesScreen()),
+                            ),
+                            const SizedBox(height: AppSpacing.dashSectionGap),
+                            DashboardQuickAccess(
+                              onStartAnalysis: () =>
+                                  _go(const AnalysisScreen()),
+                              onViewHistory: () => _go(const HistoryScreen()),
+                              onDailyRoutine: () => _go(const RoutinesScreen()),
+                              onExercises: () => _go(const ContentScreen()),
+                            ),
+                            const SizedBox(height: 24),
+                            MiProgresoSection(
+                              loading: _loadingProgreso,
+                              error: _errorProgreso,
+                              datos: _progresoData,
+                              onRetry: _cargarProgreso,
+                              onOpenRoutines: () => _go(const RoutinesScreen()),
+                              onStartAnalysis: () =>
+                                  _go(const AnalysisScreen()),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

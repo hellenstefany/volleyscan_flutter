@@ -196,29 +196,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
         currentIndex: 4,
         onTap: (i) => goToTab(context, i, current: 4, userName: _effectiveName),
       ),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _header(),
-            Expanded(
-              child: RefreshIndicator(
-                color: DashColors.blueLight,
-                backgroundColor: DashColors.card,
-                onRefresh: _cargarPerfil,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 520),
-                      child: _buildBody(),
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: AppGradients.userPanelBg),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _header(),
+              Expanded(
+                child: RefreshIndicator(
+                  color: DashColors.blueLight,
+                  backgroundColor: DashColors.card,
+                  onRefresh: _cargarPerfil,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 520),
+                        child: _buildBody(),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

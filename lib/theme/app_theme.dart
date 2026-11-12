@@ -59,14 +59,17 @@ class AppColors {
 }
 
 class AppGradients {
-  /// Gradiente global y de `.login-page`:
+  /// Gradiente de fondo del panel de usuario y páginas de autenticación (`135deg`):
   /// `linear-gradient(135deg, #0B1023 0%, #111A3A 50%, #050814 100%)`
-  static const background = LinearGradient(
+  static const userPanelBg = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     stops: [0.0, 0.5, 1.0],
     colors: [Color(0xFF0B1023), Color(0xFF111A3A), Color(0xFF050814)],
   );
+
+  /// Alias global para Login / Auth y Landing:
+  static const background = userPanelBg;
 
   /// Gradiente de `.btn-login`:
   /// `linear-gradient(90deg, #6366f1, #22d3ee)`
