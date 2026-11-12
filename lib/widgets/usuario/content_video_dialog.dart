@@ -7,15 +7,21 @@ import '../../theme/dash_colors.dart';
 import 'content_video_card.dart';
 import 'content_youtube_player.dart';
 
+/// Estados del modal para garantizar que el reproductor solo se monte al estar listo.
+enum _ModalState { loading, error, ready }
+
 /// Modal de detalle de contenido educativo (`.video-modal` en `contenido.css` y `page.jsx`).
-Future<void> showContentVideoDialog(
-  BuildContext context,
-  ContentVideo initialVideo,
-) {
-  return showDialog<void>(
+/// Usa `showGeneralDialog` con `FadeTransition` para eliminar la animación de escala (`ScaleTransition`)
+/// de `showDialog`, evitando conflictos con `HtmlElementView` en Flutter Web.
+Future<void> showContentVideoDialog(BuildContext context, ContentVideo initialVideo) {
+  return showGeneralDialog<void>(
     context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Cerrar video',
     barrierColor: Colors.black.withValues(alpha: 0.75),
-    builder: (_) => _ContentVideoDialog(initialVideo: initialVideo),
+    transitionDuration: const Duration(milliseconds: 180),
+    transitionBuilder: (_, anim, secondaryAnim, child) => FadeTransition(opacity: anim, child: child),
+    pageBuilder: (context, anim, secondaryAnim) => Center(child: _ContentVideoDialog(initialVideo: initialVideo)),
   );
 }
 
@@ -29,7 +35,7 @@ class _ContentVideoDialog extends StatefulWidget {
 
 class _ContentVideoDialogState extends State<_ContentVideoDialog> {
   late ContentVideo _video;
-  bool _loadingDetail = true;
+  _ModalState _state = _ModalState.loading;
   String? _detailError;
 
   @override
@@ -41,7 +47,7 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
 
   Future<void> _fetchDetail() async {
     setState(() {
-      _loadingDetail = true;
+      _state = _ModalState.loading;
       _detailError = null;
     });
     try {
@@ -49,19 +55,19 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
       if (!mounted) return;
       setState(() {
         _video = fresh;
-        _loadingDetail = false;
+        _state = _ModalState.ready;
       });
     } on ApiException catch (err) {
       if (!mounted) return;
       setState(() {
-        _loadingDetail = false;
         _detailError = err.message;
+        _state = _ModalState.error;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _loadingDetail = false;
         _detailError = 'No se pudo actualizar el detalle del contenido.';
+        _state = _ModalState.error;
       });
     }
   }
@@ -122,7 +128,6 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
                         fontSize: 12.5,
                       ),
                     ),
-                    if (_detailError != null) _buildDetailError(),
                     if (video.hasDescription) ...[
                       const SizedBox(height: 12),
                       Text(
@@ -148,16 +153,75 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
   }
 
   Widget _buildPlayerScreen(ContentVideo video, String? watchUrl) {
-    final ytId = video.youtubeId;
-    if (ytId != null && ytId.isNotEmpty) {
-      return ContentYoutubePlayer(
-        youtubeId: ytId,
-        thumbnailUrl: video.resolvedThumbnailUrl,
-        watchUrl: watchUrl,
-        onClose: () => Navigator.pop(context),
-      );
+    switch (_state) {
+      case _ModalState.loading:
+        return _buildScreenFrame(
+          video: video,
+          overlayOpacity: 0.6,
+          child: const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: DashColors.blueLight),
+                ),
+                SizedBox(height: 12),
+                Text('Cargando contenido...', style: TextStyle(fontFamily: 'Poppins', color: DashColors.textMuted, fontSize: 12)),
+              ],
+            ),
+          ),
+        );
+      case _ModalState.error:
+        return _buildScreenFrame(
+          video: video,
+          overlayOpacity: 0.75,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: DashColors.red, size: 36),
+                  const SizedBox(height: 8),
+                  Text(_detailError ?? 'No se pudo cargar el video.', textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Poppins', color: DashColors.errorText, fontSize: 12)),
+                  const SizedBox(height: 10),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(foregroundColor: DashColors.blueLight, backgroundColor: DashColors.surface),
+                    onPressed: _fetchDetail,
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: const Text('Reintentar', style: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      case _ModalState.ready:
+        final ytId = video.youtubeId;
+        if (ytId != null && ytId.isNotEmpty) {
+          return ContentYoutubePlayer(
+            key: ValueKey('yt_player_${video.id}_$ytId'),
+            youtubeId: ytId,
+            thumbnailUrl: video.resolvedThumbnailUrl,
+            watchUrl: watchUrl,
+            onClose: () => Navigator.pop(context),
+          );
+        }
+        return _buildScreenFrame(
+          video: video,
+          overlayOpacity: 0.35,
+          child: const Center(child: Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 56)),
+        );
     }
+  }
 
+  Widget _buildScreenFrame({
+    required ContentVideo video,
+    required double overlayOpacity,
+    required Widget child,
+  }) {
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: Stack(
@@ -165,20 +229,8 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
         children: [
           Container(color: Colors.black),
           VideoThumb(url: video.resolvedThumbnailUrl),
-          Container(color: Colors.black.withValues(alpha: 0.35)),
-          const Center(
-            child: Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 56),
-          ),
-          if (_loadingDetail)
-            const Positioned(
-              left: 12,
-              top: 12,
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2, color: DashColors.blueLight),
-              ),
-            ),
+          Container(color: Colors.black.withValues(alpha: overlayOpacity)),
+          child,
           Positioned(
             right: 12,
             top: 12,
@@ -192,46 +244,6 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.close_rounded, color: DashColors.textPrimary, size: 18),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailError() {
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: DashColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.sm),
-        border: Border.all(color: DashColors.red.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline_rounded, color: DashColors.red, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              _detailError!,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                color: DashColors.errorText,
-                fontSize: 12,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: _fetchDetail,
-            child: const Text(
-              'Reintentar',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                color: DashColors.blueLight,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
@@ -6,11 +7,9 @@ import '../../theme/dash_colors.dart';
 
 /// Reproductor incrustado de YouTube en proporción 16:9 (`.video-modal__screen`).
 ///
-/// - Inicializa el controlador iframe con `autoPlay: true`.
-/// - Libera el controlador y silencia el video al desmontarse (`dispose`).
-/// - Muestra estado de carga inicial.
-/// - Si el video falla o no permite incrustarse (ej. errores 101/150),
-///   despliega mensaje y botón de respaldo "Abrir en YouTube".
+/// - Key estable para evitar reciclaje erróneo de elementos en Web.
+/// - Controlador único creado en `initState` y liberado en `dispose` con `close()`.
+/// - Detección de errores (101/150, video no disponible) con botón de respaldo "Abrir en YouTube".
 class ContentYoutubePlayer extends StatefulWidget {
   final String youtubeId;
   final String? thumbnailUrl;
@@ -32,7 +31,9 @@ class ContentYoutubePlayer extends StatefulWidget {
 }
 
 class _ContentYoutubePlayerState extends State<ContentYoutubePlayer> {
-  late YoutubePlayerController _controller;
+  late final YoutubePlayerController _controller;
+  StreamSubscription<YoutubePlayerValue>? _sub;
+  YoutubeError _error = YoutubeError.none;
 
   @override
   void initState() {
@@ -47,18 +48,16 @@ class _ContentYoutubePlayerState extends State<ContentYoutubePlayer> {
         enableCaption: false,
       ),
     );
-  }
-
-  @override
-  void didUpdateWidget(covariant ContentYoutubePlayer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.youtubeId != widget.youtubeId) {
-      _controller.loadVideoById(videoId: widget.youtubeId);
-    }
+    _sub = _controller.stream.listen((value) {
+      if (value.hasError && value.error != _error && mounted) {
+        setState(() => _error = value.error);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _sub?.cancel();
     _controller.stopVideo();
     _controller.close();
     super.dispose();
@@ -69,9 +68,7 @@ class _ContentYoutubePlayerState extends State<ContentYoutubePlayer> {
     if (uri == null) return;
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
-      // Si el navegador externo falla, no interrumpir la app
-    }
+    } catch (_) {}
   }
 
   String _resolveErrorMessage(YoutubeError error) {
@@ -98,22 +95,12 @@ class _ContentYoutubePlayerState extends State<ContentYoutubePlayer> {
         children: [
           Container(color: Colors.black),
           YoutubePlayer(
+            key: ValueKey('inner_yt_${widget.youtubeId}'),
             controller: _controller,
             aspectRatio: 16 / 9,
             backgroundColor: Colors.black,
           ),
-          YoutubeValueBuilder(
-            controller: _controller,
-            builder: (context, value) {
-              if (value.hasError) {
-                return _buildErrorOverlay(value.error);
-              }
-              if (value.playerState == PlayerState.unknown) {
-                return _buildLoadingIndicator();
-              }
-              return const SizedBox.shrink();
-            },
-          ),
+          if (_error != YoutubeError.none) _buildErrorOverlay(_error),
           if (widget.onClose != null)
             Positioned(
               right: 12,
@@ -136,42 +123,6 @@ class _ContentYoutubePlayerState extends State<ContentYoutubePlayer> {
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingIndicator() {
-    return Positioned(
-      left: 12,
-      top: 12,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.65),
-          borderRadius: BorderRadius.circular(AppRadii.sm),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: DashColors.blueLight,
-              ),
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Cargando...',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                color: DashColors.textMuted,
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
