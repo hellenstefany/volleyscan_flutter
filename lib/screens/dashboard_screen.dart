@@ -5,10 +5,10 @@ import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/dash_colors.dart';
 import '../widgets/usuario/dashboard_bottom_nav.dart';
-import '../widgets/usuario/dashboard_drawer.dart';
 import '../widgets/usuario/dashboard_header.dart';
 import '../widgets/usuario/dashboard_quick_access.dart';
 import '../widgets/usuario/dashboard_top_summary.dart';
+import '../widgets/usuario/menu_button.dart';
 import '../widgets/usuario/progreso/mi_progreso_section.dart';
 import 'ai_history_screen.dart';
 import 'analysis_screen.dart';
@@ -16,9 +16,7 @@ import 'content_screen.dart';
 import 'history_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
-import 'progress_screen.dart';
 import 'routines_screen.dart';
-import 'settings_screen.dart';
 
 /// Panel de usuario (Inicio) alineado con `VolleyScan_Next/src/app/usuario/dashboard/page.jsx`.
 /// Contiene únicamente estado, carga en paralelo (`Future.wait`), pull-to-refresh y armado de secciones.
@@ -212,49 +210,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  /// Menú lateral (drawer).
-  void _onMenuSelect(String id) {
-    switch (id) {
-      case 'perfil':
-        _openProfile();
-        break;
-      case 'rutinas':
-        _go(const RoutinesScreen());
-        break;
-      case 'progreso':
-        _go(const ProgressScreen());
-        break;
-      case 'configuracion':
-        _go(const SettingsScreen());
-        break;
-      case 'analisis_ia':
-        _go(const AnalysisScreen());
-        break;
-      case 'historial_ia':
-        _go(const AiHistoryScreen());
-        break;
-      case 'notificaciones':
-        _go(const NotificationsScreen());
-        break;
-      case 'historial':
-        _go(const HistoryScreen());
-        break;
-      case 'contenido':
-        _go(const ContentScreen());
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: DashColors.bg,
-      drawer: DashboardDrawer(
+      drawer: UserDrawer(
         userName: _displayName,
         photoUrl: _fotoUrl,
-        selectedId: 'panel',
-        onSelect: _onMenuSelect,
+        selectedId: 'dashboard',
       ),
       bottomNavigationBar: DashboardBottomNav(
         currentIndex: _navIndex,

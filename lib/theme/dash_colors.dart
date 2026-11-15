@@ -51,6 +51,15 @@ class DashColors {
   static const badgeBloqueoText = Color(0xFFC084FC); // .badge-bloqueo
   static const badgePrepText = Color(0xFF2DD4BF); // .badge-preparacion
 
+  // Sidebar del panel de usuario (SidebarUsuario.css)
+  static const sidebarBg = Color(0xFF0C1020); // #0c1020
+  static const sidebarLogoBlue = Color(0xFF4F6EF7); // #4f6ef7
+  static const sidebarActiveBorder = Color(0xFF7C3AED); // #7c3aed
+  static const sidebarActiveStart = Color(0x384F6EF7); // rgba(79, 110, 247, 0.22)
+  static const sidebarActiveEnd = Color(0x0A4F6EF7); // rgba(79, 110, 247, 0.04)
+  static const sidebarActiveGlow = Color(0x144F6EF7); // rgba(79, 110, 247, 0.08)
+  static const sidebarItemHover = Color(0xFF161E33); // #161e33
+
   // Bordes (globals.css & perfil.css)
   static const border = Color(0x14FFFFFF); // --border: rgba(255, 255, 255, .08)
   static const borderSubtle = Color(0x0FFFFFFF); // --border: rgba(255, 255, 255, .06)

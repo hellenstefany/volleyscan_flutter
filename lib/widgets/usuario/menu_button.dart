@@ -21,17 +21,20 @@ class UserDrawer extends StatelessWidget {
     required this.selectedId,
     this.userName = '',
     this.photoUrl,
+    this.userRole,
   });
 
   final String selectedId;
   final String userName;
   final String? photoUrl;
+  final String? userRole;
 
   @override
   Widget build(BuildContext context) {
     return DashboardDrawer(
       userName: userName,
       photoUrl: photoUrl,
+      userRole: userRole,
       selectedId: selectedId,
       onSelect: (id) =>
           goToMenuItem(context, id, current: selectedId, userName: userName),

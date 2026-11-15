@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dash_colors.dart';
 
 /// Colores tomados de VolleyScan_Next (globals.css, login/page.css, Dashboard.css).
 class AppColors {
@@ -81,6 +82,28 @@ class AppGradients {
 
   static const goldBtn = LinearGradient(
     colors: [AppColors.gold, AppColors.goldDeep],
+  );
+
+  /// Gradiente del ítem activo del menú lateral (`SidebarUsuario.css`):
+  /// `linear-gradient(90deg, rgba(79, 110, 247, 0.22) 0%, rgba(79, 110, 247, 0.04) 100%)`
+  static const sidebarActiveItem = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      DashColors.sidebarActiveStart,
+      DashColors.sidebarActiveEnd,
+    ],
+  );
+
+  /// Gradiente del contenedor del logo en el menú lateral:
+  /// `linear-gradient(135deg, #4f6ef7, #7c3aed)`
+  static const sidebarLogoIcon = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      DashColors.sidebarLogoBlue,
+      DashColors.sidebarActiveBorder,
+    ],
   );
 }
 
