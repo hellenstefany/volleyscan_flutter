@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../theme/routine_colors.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/dash_colors.dart';
+import 'dash_card.dart';
 
 class SettingsSection {
   final String id;
@@ -8,9 +10,10 @@ class SettingsSection {
   const SettingsSection(this.id, this.label, this.icon);
 }
 
+/// Secciones de Configuración idénticas a `SECCIONES` en `VolleyScan_Next/src/app/usuario/configuracion/page.jsx`.
 const settingsSections = <SettingsSection>[
   SettingsSection('general', 'General', Icons.settings_rounded),
-  SettingsSection('analisis', 'Análisis', Icons.photo_camera_rounded),
+  SettingsSection('analisis', 'Análisis', Icons.videocam_rounded),
   SettingsSection(
     'notificaciones',
     'Notificaciones',
@@ -20,12 +23,13 @@ const settingsSections = <SettingsSection>[
   SettingsSection(
     'dispositivos',
     'Dispositivos',
-    Icons.desktop_windows_rounded,
+    Icons.laptop_mac_rounded,
   ),
-  SettingsSection('ayuda', 'Ayuda', Icons.help_rounded),
+  SettingsSection('ayuda', 'Ayuda', Icons.help_outline_rounded),
 ];
 
-/// Chips horizontales para cambiar de sección.
+/// Contenedor `.config-sidebar` / `.config-nav` de `configuracion.css`
+/// con pestaña activa usando `AppGradients.settingsActive`.
 class SettingsSectionTabs extends StatelessWidget {
   final String selectedId;
   final ValueChanged<String> onSelect;
@@ -38,43 +42,98 @@ class SettingsSectionTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 46,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: settingsSections.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final s = settingsSections[i];
-          final active = s.id == selectedId;
-          return GestureDetector(
-            onTap: () => onSelect(s.id),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: active ? RoutineColors.blue : RoutineColors.cardDark,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: active ? RoutineColors.blue : RoutineColors.border,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(s.icon, size: 18, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text(
-                    s.label,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                  ),
-                ],
+    return DashCard(
+      padding: const EdgeInsets.all(14),
+      borderRadius: AppRadii.md,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              'SECCIONES',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.1,
+                color: DashColors.textMuted,
               ),
             ),
-          );
-        },
+          ),
+          const SizedBox(height: 10),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (var i = 0; i < settingsSections.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 6),
+                  _SectionTabButton(
+                    section: settingsSections[i],
+                    active: settingsSections[i].id == selectedId,
+                    onTap: () => onSelect(settingsSections[i].id),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTabButton extends StatelessWidget {
+  const _SectionTabButton({
+    required this.section,
+    required this.active,
+    required this.onTap,
+  });
+
+  final SettingsSection section;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadii.sm),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: active ? AppGradients.settingsActive : null,
+            color: active ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                section.icon,
+                size: 16,
+                color: active
+                    ? DashColors.textPrimary
+                    : DashColors.textSecondary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                section.label,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: active
+                      ? DashColors.textPrimary
+                      : DashColors.textSecondary,
+                  fontSize: 13.5,
+                  fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

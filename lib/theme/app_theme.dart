@@ -120,6 +120,14 @@ class AppGradients {
     end: Alignment.bottomCenter,
     colors: [DashColors.cardDark, DashColors.coachCard2],
   );
+
+  /// Gradiente azul para pestaña activa y switches activos en Configuración:
+  /// `linear-gradient(135deg, #1E6FBF, #4DA6FF)`
+  static const settingsActive = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [DashColors.configBlueStart, DashColors.configBlueEnd],
+  );
 }
 
 class AppRadii {

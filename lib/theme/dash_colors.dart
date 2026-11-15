@@ -63,6 +63,13 @@ class DashColors {
   static const sidebarActiveGlow = Color(0x144F6EF7); // rgba(79, 110, 247, 0.08)
   static const sidebarItemHover = Color(0xFF161E33); // #161e33
 
+  // Bordes y acentos de Configuración (configuracion.css)
+  static const configBlueStart = Color(0xFF1E6FBF); // inicio gradiente activo pestañas/switches
+  static const configBlueEnd = Color(0xFF4DA6FF); // fin gradiente activo pestañas/switches
+  static const dangerOutlineBorder = Color(0x66EF4444); // rgba(239, 68, 68, .4) (.btn--danger-outline)
+  static const greenBadgeBorder = Color(0x4D22C55E); // rgba(34, 197, 94, .3) (.device-badge)
+  static const modalOverlay = Color(0xA6000000); // rgba(0, 0, 0, .65) (.modal-overlay)
+
   // Bordes (globals.css & perfil.css)
   static const border = Color(0x14FFFFFF); // --border: rgba(255, 255, 255, .08)
   static const borderSubtle = Color(0x0FFFFFFF); // --border: rgba(255, 255, 255, .06)

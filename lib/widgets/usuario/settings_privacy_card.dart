@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../models/settings_data.dart';
-import '../../theme/routine_colors.dart';
+import '../../models/preferences_data.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/dash_colors.dart';
+import 'dash_card.dart';
 import 'settings_general_card.dart';
 
-/// Tarjeta "Privacidad rápida" + botón Cerrar sesión.
+/// Tarjeta lateral `.quick-privacy` de `SeccionGeneral.jsx` + botón "Cerrar sesión".
 class SettingsPrivacyCard extends StatelessWidget {
-  final SettingsData data;
-  final ValueChanged<SettingsData> onChanged;
+  final PreferencesData data;
+  final ValueChanged<PreferencesData> onChanged;
   final VoidCallback onLogout;
 
   const SettingsPrivacyCard({
@@ -16,71 +18,81 @@ class SettingsPrivacyCard extends StatelessWidget {
     required this.onLogout,
   });
 
-  static const _red = Color(0xFFEF4444);
-
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: RoutineColors.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: RoutineColors.border),
-      ),
+    return DashCard(
+      padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Privacidad rápida',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
+              fontFamily: 'Poppins',
+              color: DashColors.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           const Text(
             'Quién puede ver mis análisis',
-            style: TextStyle(color: Colors.white, fontSize: 15),
-          ),
-          const SizedBox(height: 10),
-          SettingsDropdown(
-            expand: true,
-            value: data.analysisVisibility,
-            items: SettingsData.visibilityOptions,
-            onChanged: (v) => onChanged(data.copyWith(analysisVisibility: v)),
-          ),
-          const SizedBox(height: 14),
-          _switchRow(
-            'Permitir comentarios',
-            data.allowComments,
-            (v) => onChanged(data.copyWith(allowComments: v)),
-          ),
-          _switchRow(
-            'Compartir progreso',
-            data.shareProgress,
-            (v) => onChanged(data.copyWith(shareProgress: v)),
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              color: DashColors.textPrimary,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 8),
-          Divider(height: 1, color: Colors.white.withOpacity(0.08)),
+          SettingsDropdown(
+            expand: true,
+            value: data.visibilidadAnalisis,
+            options: PreferencesData.visibilidadLabels,
+            onChanged: (v) =>
+                onChanged(data.copyWith(visibilidadAnalisis: v)),
+          ),
+          const SizedBox(height: 16),
+          _quickToggle(
+            label: 'Permitir comentarios',
+            value: data.permitirComentarios,
+            onChanged: (v) =>
+                onChanged(data.copyWith(permitirComentarios: v)),
+          ),
+          const SizedBox(height: 14),
+          _quickToggle(
+            label: 'Compartir progreso',
+            value: data.compartirProgreso,
+            onChanged: (v) => onChanged(data.copyWith(compartirProgreso: v)),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, color: DashColors.border),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            height: 46,
+            height: 42,
             child: OutlinedButton.icon(
               onPressed: onLogout,
-              icon: const Icon(Icons.logout_rounded, size: 20, color: _red),
+              icon: const Icon(
+                Icons.logout_rounded,
+                size: 18,
+                color: DashColors.red,
+              ),
               label: const Text(
                 'Cerrar sesión',
-                style: TextStyle(color: _red, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: DashColors.red,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: _red,
-                backgroundColor: const Color(0xFF0A1022),
-                side: const BorderSide(color: Color(0xFF7F1D1D)),
+                foregroundColor: DashColors.red,
+                backgroundColor: Colors.transparent,
+                side: const BorderSide(color: DashColors.dangerOutlineBorder),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
                 ),
               ),
             ),
@@ -90,15 +102,25 @@ class SettingsPrivacyCard extends StatelessWidget {
     );
   }
 
-  Widget _switchRow(String label, bool value, ValueChanged<bool> onChanged) {
+  Widget _quickToggle({
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
     return Row(
       children: [
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              color: DashColors.textPrimary,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
+        const SizedBox(width: 12),
         SettingsSwitch(value: value, onChanged: onChanged),
       ],
     );

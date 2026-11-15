@@ -1,189 +1,80 @@
 import 'package:flutter/material.dart';
-import '../../models/settings_data.dart';
-import '../../theme/routine_colors.dart';
+import '../../models/preferences_data.dart';
+import '../../theme/dash_colors.dart';
+import 'dash_card.dart';
 import 'settings_general_card.dart';
 
-/// Sección "Análisis" de Configuración.
+/// Sección "Análisis" (`SeccionAnalisis.jsx` en Next):
+/// solo vive en estado local con la nota aclaratoria y sin botones de guardar.
 class SettingsAnalysisCard extends StatelessWidget {
-  final SettingsData data;
-  final ValueChanged<SettingsData> onChanged;
-  final VoidCallback onCancel;
-  final VoidCallback onSave;
-  final bool saving;
+  final LocalAnalysisSettings data;
+  final ValueChanged<LocalAnalysisSettings> onChanged;
 
   const SettingsAnalysisCard({
     super.key,
     required this.data,
     required this.onChanged,
-    required this.onCancel,
-    required this.onSave,
-    this.saving = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: RoutineColors.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: RoutineColors.border),
-      ),
+    return DashCard(
+      padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Análisis',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+              fontFamily: 'Poppins',
+              color: DashColors.textPrimary,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Estos ajustes se aplican mientras la página esté abierta.',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              color: DashColors.textMuted,
+              fontSize: 12,
             ),
           ),
           const SizedBox(height: 8),
-          _switchRow(
-            title: 'Detección de pose en tiempo real',
-            subtitle: 'Muestra el esqueleto de pose mientras grabas',
-            value: data.poseDetection,
-            onChanged: (v) => onChanged(data.copyWith(poseDetection: v)),
-          ),
-          _switchRow(
-            title: 'Alertas de errores durante análisis',
-            subtitle: 'Resalta en rojo las articulaciones con error',
-            value: data.errorAlerts,
-            onChanged: (v) => onChanged(data.copyWith(errorAlerts: v)),
-          ),
-          _switchRow(
-            title: 'Análisis automático al subir video',
-            subtitle: 'Procesa el video sin confirmación adicional',
-            value: data.autoAnalysis,
-            onChanged: (v) => onChanged(data.copyWith(autoAnalysis: v)),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Colors.white.withOpacity(0.08)),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Sensibilidad de detección',
-                    style: TextStyle(color: Colors.white, fontSize: 15),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 190,
-                  child: SettingsDropdown(
-                    expand: true,
-                    value: data.sensitivity,
-                    items: SettingsData.sensitivityOptions,
-                    onChanged: (v) => onChanged(data.copyWith(sensitivity: v)),
-                  ),
-                ),
-              ],
+          SettingsRow(
+            label: 'Detección de pose en tiempo real',
+            description: 'Muestra el esqueleto de pose mientras grabas',
+            control: SettingsSwitch(
+              value: data.pose,
+              onChanged: (v) => onChanged(data.copyWith(pose: v)),
             ),
           ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 46,
-                  child: OutlinedButton(
-                    onPressed: saving ? null : onCancel,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: const Color(0xFF0A1022),
-                      side: BorderSide(color: Colors.white.withOpacity(0.1)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'Cancelar',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: SizedBox(
-                  height: 46,
-                  child: ElevatedButton(
-                    onPressed: saving ? null : onSave,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: saving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'Guardar cambios',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _switchRow({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.08)),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(color: Colors.white, fontSize: 15),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.45),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+          SettingsRow(
+            label: 'Alertas de errores durante el análisis',
+            description: 'Resalta en rojo las articulaciones con error',
+            control: SettingsSwitch(
+              value: data.alertas,
+              onChanged: (v) => onChanged(data.copyWith(alertas: v)),
             ),
           ),
-          const SizedBox(width: 8),
-          SettingsSwitch(value: value, onChanged: onChanged),
+          SettingsRow(
+            label: 'Análisis automático al subir video',
+            description: 'Procesa el video sin confirmación adicional',
+            control: SettingsSwitch(
+              value: data.automatico,
+              onChanged: (v) => onChanged(data.copyWith(automatico: v)),
+            ),
+          ),
+          SettingsRow(
+            label: 'Sensibilidad de detección',
+            showBottomBorder: false,
+            control: SettingsDropdown(
+              value: data.sensibilidad,
+              options: LocalAnalysisSettings.sensibilidadLabels,
+              onChanged: (v) => onChanged(data.copyWith(sensibilidad: v)),
+            ),
+          ),
         ],
       ),
     );
