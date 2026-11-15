@@ -18,8 +18,6 @@ class ConnectedDevice {
   final DateTime? ultimoAcceso;
   final bool actual;
 
-  static const sample = <ConnectedDevice>[];
-
   /// Getters de compatibilidad para los widgets de UI.
   String get name => nombre;
   bool get isCurrent => actual;
