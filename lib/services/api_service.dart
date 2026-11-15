@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/coach_link_data.dart';
 import '../models/content_data.dart';
 import '../models/dashboard_data.dart';
 import '../models/preferences_data.dart';
@@ -583,6 +584,49 @@ class ApiService {
   Future<ContentVideo> obtenerContenidoDetalle(int id) async {
     final data = await get('/usuario/contenido/$id/');
     return ContentVideo.fromJson(Map<String, dynamic>.from(data as Map));
+  }
+
+  // ---------- Mi Entrenador (Vínculos Atleta-Entrenador) ----------
+
+  /// Obtiene el vínculo vigente del atleta o su último rechazo (`GET /api/ia/vinculos/mi-entrenador`).
+  Future<MyCoachResponse> miEntrenador() async {
+    final data = await get('/ia/vinculos/mi-entrenador');
+    if (data is Map) {
+      return MyCoachResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const MyCoachResponse();
+  }
+
+  /// Lista los entrenadores activos disponibles (`GET /api/ia/vinculos/entrenadores`).
+  Future<List<CoachPerson>> listarEntrenadores({String? q}) async {
+    final query = (q != null && q.trim().isNotEmpty)
+        ? '?q=${Uri.encodeQueryComponent(q.trim())}'
+        : '';
+    final data = await get('/ia/vinculos/entrenadores$query');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) => CoachPerson.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+    }
+    return const <CoachPerson>[];
+  }
+
+  /// Envía una solicitud de vinculación a un entrenador (`POST /api/ia/vinculos/solicitudes`).
+  Future<int?> solicitarEntrenador(int entrenadorId) async {
+    final data = await post(
+      '/ia/vinculos/solicitudes',
+      {'entrenadorId': entrenadorId},
+    );
+    if (data is Map && data['id'] != null) {
+      return int.tryParse(data['id'].toString());
+    }
+    return null;
+  }
+
+  /// Cancela una solicitud pendiente o finaliza el vínculo activo (`DELETE /api/ia/vinculos/mi-entrenador`).
+  Future<void> cancelarOSalirEntrenador() async {
+    await delete('/ia/vinculos/mi-entrenador');
   }
 
   /// Convierte URL relativa `/media/...` en absoluta respecto al host del backend.

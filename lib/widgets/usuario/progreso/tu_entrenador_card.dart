@@ -8,8 +8,13 @@ import 'progreso_shared.dart';
 /// Tarjeta "Tu entrenador" (`Entrenador` en `MiProgreso.jsx`).
 class TuEntrenadorCard extends StatelessWidget {
   final ProgresoEntrenador? entrenador;
+  final VoidCallback? onOpenCoach;
 
-  const TuEntrenadorCard({super.key, required this.entrenador});
+  const TuEntrenadorCard({
+    super.key,
+    required this.entrenador,
+    this.onOpenCoach,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +38,32 @@ class TuEntrenadorCard extends StatelessWidget {
                 color: DashColors.textSecondary,
               ),
             ),
+            if (onOpenCoach != null) ...[
+              const SizedBox(height: AppSpacing.dashCardGap),
+              ElevatedButton.icon(
+                onPressed: onOpenCoach,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: DashColors.blueLight,
+                  foregroundColor: DashColors.textPrimary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 9,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                  ),
+                ),
+                icon: const Icon(Icons.groups_rounded, size: 16),
+                label: const Text(
+                  'Buscar entrenador',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ] else ...[
             Row(
               children: [
@@ -54,7 +85,7 @@ class TuEntrenadorCard extends StatelessWidget {
                       fontFamily: 'Poppins',
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: DashColors.textPrimary,
                     ),
                   ),
                 ),
@@ -69,7 +100,7 @@ class TuEntrenadorCard extends StatelessWidget {
                           fontFamily: 'Poppins',
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: DashColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -121,6 +152,38 @@ class TuEntrenadorCard extends StatelessWidget {
                 color: DashColors.textSecondary,
               ),
             ),
+            if (onOpenCoach != null) ...[
+              const SizedBox(height: AppSpacing.dashCardGap),
+              OutlinedButton(
+                onPressed: onOpenCoach,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: DashColors.text,
+                  side: const BorderSide(color: DashColors.border2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 9,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Ver mi entrenador',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(Icons.arrow_forward_rounded, size: 15),
+                  ],
+                ),
+              ),
+            ],
           ],
         ],
       ),

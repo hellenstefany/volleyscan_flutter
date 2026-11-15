@@ -105,6 +105,21 @@ class AppGradients {
       DashColors.sidebarActiveBorder,
     ],
   );
+
+  /// Gradiente de avatar y botón primario en "Mi entrenador" (`entrenador.module.css`):
+  /// `linear-gradient(135deg, #3b82f6, #6366f1)`
+  static const coachPrimaryBtn = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [DashColors.blueLight, AppColors.blue],
+  );
+
+  /// Gradiente de tarjeta de entrenador (`linear-gradient(180deg, var(--card), var(--card2))`):
+  static const coachCardBg = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [DashColors.cardDark, DashColors.coachCard2],
+  );
 }
 
 class AppRadii {

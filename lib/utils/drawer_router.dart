@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../screens/ai_history_screen.dart';
 import '../screens/analysis_screen.dart';
+import '../screens/coach_screen.dart';
 import '../screens/content_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/history_screen.dart';
@@ -44,11 +45,7 @@ void goToMenuItem(
       replace(ProfileScreen(userName: userName));
       break;
     case 'entrenador':
-      showAppToast(
-        context,
-        'Próximamente disponible: Mi entrenador',
-        type: 'info',
-      );
+      replace(const CoachScreen());
       break;
     case 'equipos':
       showAppToast(

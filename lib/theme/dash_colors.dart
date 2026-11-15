@@ -42,6 +42,9 @@ class DashColors {
   static const red = Color(0xFFEF4444); // --red
   static const deltaDown = Color(0xFFF87171); // .stat-card__delta--down / .down
   static const errorText = Color(0xFFFCA5A5); // .err / .late
+  static const warningText = Color(0xFFFDBA74); // .alerta (entrenador.module.css)
+  static const coachCard2 = Color(0xFF0E1422); // --card2 (entrenador.module.css)
+  static const coachBorder = Color(0xFF1F2634); // --border (entrenador.module.css)
   static const infoBadgeText = Color(0xFF93C5FD); // .go / .evIcon.analisis / .retry
   static const successBadgeText = Color(0xFF86EFAC); // .pill.ok / .evIcon.ejercicio
   static const checkIconDark = Color(0xFF052E16); // .day.on .dot

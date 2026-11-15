@@ -12,6 +12,7 @@ import '../widgets/usuario/menu_button.dart';
 import '../widgets/usuario/progreso/mi_progreso_section.dart';
 import 'ai_history_screen.dart';
 import 'analysis_screen.dart';
+import 'coach_screen.dart';
 import 'content_screen.dart';
 import 'history_screen.dart';
 import 'notifications_screen.dart';
@@ -278,6 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               onOpenRoutines: () => _go(const RoutinesScreen()),
                               onStartAnalysis: () =>
                                   _go(const AnalysisScreen()),
+                              onOpenCoach: () => _go(const CoachScreen()),
                             ),
                           ],
                         ),

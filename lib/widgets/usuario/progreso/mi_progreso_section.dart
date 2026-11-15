@@ -22,6 +22,7 @@ class MiProgresoSection extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback onOpenRoutines;
   final VoidCallback onStartAnalysis;
+  final VoidCallback? onOpenCoach;
 
   const MiProgresoSection({
     super.key,
@@ -31,6 +32,7 @@ class MiProgresoSection extends StatelessWidget {
     required this.onRetry,
     required this.onOpenRoutines,
     required this.onStartAnalysis,
+    this.onOpenCoach,
   });
 
   @override
@@ -99,7 +101,10 @@ class MiProgresoSection extends StatelessWidget {
           const SizedBox(height: AppSpacing.dashGap),
           ActividadSemanalCard(semanas: datos!.semanas),
           const SizedBox(height: AppSpacing.dashGap),
-          TuEntrenadorCard(entrenador: datos!.entrenador),
+          TuEntrenadorCard(
+            entrenador: datos!.entrenador,
+            onOpenCoach: onOpenCoach,
+          ),
           const SizedBox(height: AppSpacing.dashGap),
           LogrosCard(logros: datos!.logros),
           const SizedBox(height: AppSpacing.dashGap),
