@@ -14,10 +14,12 @@ class PreferencesForm extends StatefulWidget {
     super.key,
     required this.initial,
     required this.onSave,
+    this.enabled = true,
   });
 
   final PreferencesData initial;
   final Future<void> Function(PreferencesData data) onSave;
+  final bool enabled;
 
   @override
   State<PreferencesForm> createState() => _PreferencesFormState();
@@ -57,9 +59,9 @@ class _PreferencesFormState extends State<PreferencesForm> {
   }
 
   Future<void> _save() async {
-    if (_saving) return;
+    if (_saving || !widget.enabled) return;
 
-    final data = PreferencesData(
+    final data = widget.initial.copyWith(
       notifSesion: _notifSesion,
       notifAnalisis: _notifAnalisis,
       notifContenido: _notifContenido,
@@ -230,7 +232,12 @@ class _PreferencesFormState extends State<PreferencesForm> {
             ),
           ),
           const SizedBox(height: 24),
-          FormActionButtons(saving: _saving, onCancel: _cancel, onSave: _save),
+          FormActionButtons(
+            saving: _saving,
+            enabled: widget.enabled,
+            onCancel: _cancel,
+            onSave: _save,
+          ),
         ],
       ),
     );

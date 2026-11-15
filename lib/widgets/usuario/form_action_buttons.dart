@@ -10,22 +10,25 @@ class FormActionButtons extends StatelessWidget {
     required this.onCancel,
     required this.onSave,
     this.saveLabel = 'Guardar cambios',
+    this.enabled = true,
   });
 
   final bool saving;
   final VoidCallback onCancel;
   final VoidCallback onSave;
   final String saveLabel;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
+    final disabled = saving || !enabled;
     return Row(
       children: [
         Expanded(
           child: SizedBox(
             height: 44,
             child: OutlinedButton(
-              onPressed: saving ? null : onCancel,
+              onPressed: disabled ? null : onCancel,
               style: OutlinedButton.styleFrom(
                 foregroundColor: DashColors.textSecondary,
                 backgroundColor: DashColors.surface,
@@ -51,7 +54,7 @@ class FormActionButtons extends StatelessWidget {
           child: SizedBox(
             height: 44,
             child: ElevatedButton(
-              onPressed: saving ? null : onSave,
+              onPressed: disabled ? null : onSave,
               style: ElevatedButton.styleFrom(
                 backgroundColor: DashColors.blueLight,
                 disabledBackgroundColor:

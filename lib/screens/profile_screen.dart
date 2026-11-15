@@ -36,7 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _uploadingPhoto = false;
 
   ProfileData? _profile;
-  PreferencesData _prefs = PreferencesData.defaults;
+  PreferencesData? _prefs;
 
   static const _maxPhotoBytes = 2 * 1024 * 1024; // 2 MB
   static const _allowedExts = {'jpg', 'jpeg', 'png', 'webp'};
@@ -93,6 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _savePreferences(PreferencesData data) async {
+    if (_prefs == null) return;
     final saved = await ApiService().actualizarConfiguracion(data);
     if (!mounted) return;
     setState(() => _prefs = saved);
@@ -345,7 +346,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onRemovePhoto: _removePhoto,
         );
       case ProfileSection.preferences:
-        return PreferencesForm(initial: _prefs, onSave: _savePreferences);
+        return PreferencesForm(
+          initial: _prefs ?? PreferencesData.defaults,
+          enabled: _prefs != null,
+          onSave: _savePreferences,
+        );
       case ProfileSection.security:
         return SecurityForm(onChangePassword: _changePassword);
     }

@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import '../models/coach_link_data.dart';
 import '../models/content_data.dart';
 import '../models/dashboard_data.dart';
+import '../models/device_data.dart';
 import '../models/preferences_data.dart';
 import '../models/profile_data.dart';
 import '../models/progreso_atleta_data.dart';
@@ -524,6 +525,33 @@ class ApiService {
       await put('/usuario/configuracion/', prefs.toJson()) as Map,
     );
     return PreferencesData.fromJson(raw);
+  }
+
+  // ---------- Dispositivos conectados (/api/usuario/dispositivos/) ----------
+
+  /// Lista los dispositivos con sesión activa (`GET /api/usuario/dispositivos/`).
+  Future<List<ConnectedDevice>> listarDispositivos() async {
+    final raw = await get('/usuario/dispositivos/');
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((m) => ConnectedDevice.fromJson(Map<String, dynamic>.from(m)))
+        .toList();
+  }
+
+  /// Cierra la sesión de otro dispositivo (`DELETE /api/usuario/dispositivos/<id>/`).
+  Future<void> cerrarDispositivo(int id) async {
+    await delete('/usuario/dispositivos/$id/');
+  }
+
+  /// Cierra todas las sesiones excepto la del dispositivo actual
+  /// (`POST /api/usuario/dispositivos/cerrar-otros/`) y devuelve la cantidad `cerrados`.
+  Future<int> cerrarOtrosDispositivos() async {
+    final raw = await post('/usuario/dispositivos/cerrar-otros/', const {});
+    if (raw is Map && raw['cerrados'] is num) {
+      return (raw['cerrados'] as num).toInt();
+    }
+    return 0;
   }
 
   /// Obtiene los datos principales del dashboard del atleta (`GET /api/usuario/dashboard/`).
