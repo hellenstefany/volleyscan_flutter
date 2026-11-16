@@ -160,7 +160,14 @@ class TopBarDrawer extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: IconButton(
                   icon: const Icon(Icons.close_rounded, color: Colors.white70),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    final scaffold = Scaffold.maybeOf(context);
+                    if (scaffold != null && scaffold.isDrawerOpen) {
+                      scaffold.closeDrawer();
+                    } else {
+                      Navigator.of(context).maybePop();
+                    }
+                  },
                 ),
               ),
               for (final l in _links)
@@ -175,7 +182,7 @@ class TopBarDrawer extends StatelessWidget {
                     ),
                   ),
                   onTap: () {
-                    Navigator.pop(context);
+                    Scaffold.maybeOf(context)?.closeDrawer();
                     // TODO: navegar o hacer scroll a "$l"
                   },
                 ),

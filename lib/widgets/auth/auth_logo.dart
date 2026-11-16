@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../screens/home_screen.dart';
 import '../../theme/app_theme.dart';
 
 /// Replica `.login-header` -> `.logo` de VolleyScan_Next (`login/page.jsx` y `page.css`):
@@ -17,7 +18,16 @@ class AuthLogo extends StatelessWidget {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap ??
-              () => Navigator.popUntil(context, (route) => route.isFirst),
+              () {
+                final nav = Navigator.of(context);
+                if (nav.canPop()) {
+                  nav.popUntil((route) => route.isFirst);
+                } else {
+                  nav.pushReplacement(
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  );
+                }
+              },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(AppRadii.sm),
             child: Image.asset(

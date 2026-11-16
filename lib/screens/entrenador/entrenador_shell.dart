@@ -83,7 +83,7 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
               selectedIndex: _index,
               onSelect: (i) {
                 _go(i);
-                Navigator.pop(context); // cierra el drawer
+                _scaffoldKey.currentState?.closeDrawer();
               },
             ),
           ),

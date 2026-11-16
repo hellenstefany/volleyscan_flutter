@@ -41,7 +41,7 @@ Future<void> showSettingsDangerConfirmModal({
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     OutlinedButton(
-                      onPressed: busy ? null : () => Navigator.of(ctx).pop(),
+                      onPressed: busy ? null : () => Navigator.of(ctx).maybePop(),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: DashColors.textSecondary,
                         backgroundColor: DashColors.surface,
@@ -58,7 +58,10 @@ Future<void> showSettingsDangerConfirmModal({
                               setModalState(() => busy = true);
                               try {
                                 await onConfirm();
-                                if (ctx.mounted) Navigator.of(ctx).pop();
+                                if (ctx.mounted &&
+                                    (ModalRoute.of(ctx)?.isCurrent ?? false)) {
+                                  Navigator.of(ctx).pop();
+                                }
                               } finally {
                                 if (ctx.mounted) setModalState(() => busy = false);
                               }

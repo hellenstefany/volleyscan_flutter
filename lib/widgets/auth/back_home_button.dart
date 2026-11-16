@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../screens/home_screen.dart';
 
 const _sky = Color(0xFF38BDF8);
 
@@ -13,8 +14,17 @@ class BackHomeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap:
-          onTap ?? () => Navigator.popUntil(context, (route) => route.isFirst),
+      onTap: onTap ??
+          () {
+            final nav = Navigator.of(context);
+            if (nav.canPop()) {
+              nav.popUntil((route) => route.isFirst);
+            } else {
+              nav.pushReplacement(
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              );
+            }
+          },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(

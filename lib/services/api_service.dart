@@ -192,24 +192,27 @@ class ApiService {
     // Si la petición llevaba un JWT y el backend responde 401 (token vencido o sesión cerrada),
     // limpiamos el almacenamiento seguro y redirigimos al Login una sola vez.
     if (r.statusCode == 401 && hadAuthToken && !_isHandlingUnauthorized) {
-      _isHandlingUnauthorized = true;
-      try {
-        await logout();
-        final navState = navigatorKey.currentState;
-        final ctx = navigatorKey.currentContext;
-        if (ctx != null && ctx.mounted) {
-          showAppToast(
-            ctx,
-            'Tu sesión ha expirado. Inicia sesión nuevamente.',
-            type: 'error',
+      final storedToken = await getToken();
+      if (storedToken != null && storedToken.isNotEmpty) {
+        _isHandlingUnauthorized = true;
+        try {
+          await logout();
+          final navState = navigatorKey.currentState;
+          final ctx = navigatorKey.currentContext;
+          if (ctx != null && ctx.mounted) {
+            showAppToast(
+              ctx,
+              'Tu sesión ha expirado. Inicia sesión nuevamente.',
+              type: 'error',
+            );
+          }
+          navState?.pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
           );
+        } finally {
+          _isHandlingUnauthorized = false;
         }
-        navState?.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
-        );
-      } finally {
-        _isHandlingUnauthorized = false;
       }
     }
 
@@ -423,12 +426,25 @@ class ApiService {
   /// Cierra la sesión en el servidor (`/api/usuario/dispositivos/cerrar-actual/`)
   /// y limpia el almacenamiento seguro local.
   Future<void> cerrarSesionCompleta() async {
-    try {
-      await post('/usuario/dispositivos/cerrar-actual/', const {});
-    } catch (_) {
-      // Si el token ya venció o no hay red, igual limpiamos localmente.
-    }
+    final token = await getToken();
     await logout();
+    if (token != null && token.isNotEmpty) {
+      try {
+        await http
+            .post(
+              Uri.parse('$baseUrl/usuario/dispositivos/cerrar-actual/'),
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json; charset=UTF-8',
+                'Authorization': 'Bearer $token',
+              },
+              body: '{}',
+            )
+            .timeout(_timeout);
+      } catch (_) {
+        // Si el token ya venció o no hay red, ya se limpió localmente.
+      }
+    }
   }
 
   // ---------- Perfil y Dashboard de Usuario ----------

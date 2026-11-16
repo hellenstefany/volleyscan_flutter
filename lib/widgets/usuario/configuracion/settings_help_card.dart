@@ -106,7 +106,7 @@ Widget _modalFrame(BuildContext ctx, {required String title, required double max
               children: [
                 Expanded(child: Text(title, style: const TextStyle(color: DashColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700))),
                 IconButton(
-                  onPressed: disableClose ? null : () => Navigator.of(ctx).pop(),
+                  onPressed: disableClose ? null : () => Navigator.of(ctx).maybePop(),
                   icon: const Icon(Icons.close_rounded, color: DashColors.textMuted, size: 20),
                   visualDensity: VisualDensity.compact,
                 ),
@@ -234,7 +234,7 @@ Future<void> _showSupportModal(BuildContext context, {required bool isReport}) a
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   OutlinedButton(
-                    onPressed: sending ? null : () => Navigator.of(ctx).pop(),
+                    onPressed: sending ? null : () => Navigator.of(ctx).maybePop(),
                     style: OutlinedButton.styleFrom(foregroundColor: DashColors.textSecondary, backgroundColor: DashColors.surface, side: const BorderSide(color: DashColors.border2)),
                     child: const Text('Cancelar'),
                   ),
@@ -247,8 +247,9 @@ Future<void> _showSupportModal(BuildContext context, {required bool isReport}) a
                             if (mensaje.trim().length < 10) return setModalState(() => error = 'Cuéntanos un poco más (mínimo 10 caracteres).');
                             setModalState(() { error = null; sending = true; });
                             if (_simularSoporte) await Future<void>.delayed(const Duration(milliseconds: 900));
-                            if (!ctx.mounted) return;
-                            Navigator.of(ctx).pop();
+                            if (ctx.mounted && (ModalRoute.of(ctx)?.isCurrent ?? false)) {
+                              Navigator.of(ctx).pop();
+                            }
                             if (context.mounted) {
                               showAppToast(context, isReport ? 'Reporte enviado. ¡Gracias por avisarnos!' : 'Mensaje enviado. Te responderemos pronto.');
                             }
@@ -296,7 +297,7 @@ Future<void> _showVersionModal(BuildContext context) async {
               ),
             ),
           const SizedBox(height: 18),
-          Align(alignment: Alignment.centerRight, child: ElevatedButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cerrar'))),
+          Align(alignment: Alignment.centerRight, child: ElevatedButton(onPressed: () => Navigator.of(ctx).maybePop(), child: const Text('Cerrar'))),
         ],
       ),
     ),

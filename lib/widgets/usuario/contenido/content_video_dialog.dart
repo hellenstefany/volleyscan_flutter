@@ -205,7 +205,7 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
             return ContentYoutubeFallback(
               thumbnailUrl: video.resolvedThumbnailUrl,
               watchUrl: watchUrl,
-              onClose: () => Navigator.pop(context),
+              onClose: () => Navigator.of(context).maybePop(),
             );
           }
           return ContentYoutubePlayer(
@@ -213,7 +213,7 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
             youtubeId: ytId,
             thumbnailUrl: video.resolvedThumbnailUrl,
             watchUrl: watchUrl,
-            onClose: () => Navigator.pop(context),
+            onClose: () => Navigator.of(context).maybePop(),
           );
         }
         return _buildScreenFrame(
@@ -242,7 +242,7 @@ class _ContentVideoDialogState extends State<_ContentVideoDialog> {
             right: 12,
             top: 12,
             child: GestureDetector(
-              onTap: () => Navigator.pop(context),
+              onTap: () => Navigator.of(context).maybePop(),
               child: Container(
                 width: 32,
                 height: 32,

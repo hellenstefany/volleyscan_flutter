@@ -114,9 +114,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: '¿Seguro que quieres cerrar sesión en VolleyScan?',
       confirmLabel: 'Cerrar sesión',
       onConfirm: () async {
+        final nav =
+            ApiService.navigatorKey.currentState ?? Navigator.of(context);
         await ApiService().cerrarSesionCompleta();
-        if (!mounted) return;
-        Navigator.of(context).pushAndRemoveUntil(
+        nav.pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const LoginScreen()),
           (route) => false,
         );

@@ -79,7 +79,14 @@ class DashboardDrawerHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              final scaffold = Scaffold.maybeOf(context);
+              if (scaffold != null && scaffold.isDrawerOpen) {
+                scaffold.closeDrawer();
+              } else {
+                Navigator.of(context).maybePop();
+              }
+            },
             icon: const Icon(
               Icons.close_rounded,
               size: 20,

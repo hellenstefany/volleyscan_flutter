@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../login_screen.dart';
+import '../../services/api_service.dart';
 
 // ── Colores (variables CSS) ──
 const _bg = Color(0xFF0D0F1A);
@@ -167,12 +169,17 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     _toast('↩', 'Cambios descartados', _muted);
   }
 
-  void _logout() {
+  Future<void> _logout() async {
     _toast('👋', 'Sesión cerrada', _danger);
     if (widget.onLogout != null) {
       widget.onLogout!();
     } else {
-      Navigator.of(context).popUntil((r) => r.isFirst);
+      final nav = ApiService.navigatorKey.currentState ?? Navigator.of(context);
+      await ApiService().cerrarSesionCompleta();
+      nav.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
     }
   }
 

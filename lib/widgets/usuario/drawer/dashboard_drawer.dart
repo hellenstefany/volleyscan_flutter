@@ -129,7 +129,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
   }
 
   void _onItemTap(DrawerItem item) {
-    Navigator.of(context).pop();
+    Scaffold.maybeOf(context)?.closeDrawer();
     if (widget.onSelect != null) {
       widget.onSelect!(item.id);
     } else {
@@ -143,12 +143,12 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
   }
 
   Future<void> _handleLogout() async {
-    Navigator.of(context).pop();
+    final nav = ApiService.navigatorKey.currentState ?? Navigator.of(context);
+    Scaffold.maybeOf(context)?.closeDrawer();
     try {
       await ApiService().cerrarSesionCompleta();
     } catch (_) {}
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
+    nav.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
