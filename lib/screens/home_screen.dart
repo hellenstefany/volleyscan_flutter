@@ -6,15 +6,8 @@ import '../widgets/features_section.dart';
 import '../widgets/plans_section.dart';
 import '../widgets/footer_section.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
