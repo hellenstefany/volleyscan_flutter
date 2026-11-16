@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/progreso_atleta_data.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/dash_colors.dart';
-import '../dash_card.dart';
+import '../shared/dash_card.dart';
 import 'progreso_shared.dart';
 
 /// Tarjeta "Por técnica" (`Tecnicas` en `MiProgreso.jsx`).

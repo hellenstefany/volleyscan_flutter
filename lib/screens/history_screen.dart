@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../utils/bottom_nav_router.dart';
-import '../widgets/usuario/dashboard_bottom_nav.dart';
+import '../widgets/usuario/shared/dashboard_bottom_nav.dart';
 import '../models/session_data.dart';
 import '../theme/routine_colors.dart';
-import '../widgets/usuario/session_filter_dropdown.dart';
-import '../widgets/usuario/session_item.dart';
-import '../widgets/usuario/menu_button.dart';
+import '../widgets/usuario/historial/session_filter_dropdown.dart';
+import '../widgets/usuario/historial/session_item.dart';
+import '../widgets/usuario/drawer/menu_button.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});

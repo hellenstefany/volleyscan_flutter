@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../utils/bottom_nav_router.dart';
-import '../widgets/usuario/dashboard_bottom_nav.dart';
+import '../widgets/usuario/shared/dashboard_bottom_nav.dart';
 import '../models/analysis_data.dart';
 import '../theme/routine_colors.dart';
-import '../widgets/usuario/analysis_camera_panel.dart';
-import '../widgets/usuario/analysis_measure_panel.dart';
-import '../widgets/usuario/menu_button.dart';
+import '../widgets/usuario/analisis/analysis_camera_panel.dart';
+import '../widgets/usuario/analisis/analysis_measure_panel.dart';
+import '../widgets/usuario/drawer/menu_button.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});

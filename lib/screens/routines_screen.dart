@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../utils/bottom_nav_router.dart';
-import '../widgets/usuario/dashboard_bottom_nav.dart';
+import '../widgets/usuario/shared/dashboard_bottom_nav.dart';
 import '../models/routine_data.dart';
 import '../theme/routine_colors.dart';
-import '../widgets/usuario/routine_exercise_tile.dart';
-import '../widgets/usuario/routine_info_cards.dart';
-import '../widgets/usuario/routine_progress_card.dart';
-import '../widgets/usuario/menu_button.dart';
+import '../widgets/usuario/rutinas/routine_exercise_tile.dart';
+import '../widgets/usuario/rutinas/routine_info_cards.dart';
+import '../widgets/usuario/rutinas/routine_progress_card.dart';
+import '../widgets/usuario/drawer/menu_button.dart';
 import '../services/api_service.dart';
 
 class RoutinesScreen extends StatefulWidget {

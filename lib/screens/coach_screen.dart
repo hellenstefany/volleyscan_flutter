@@ -3,9 +3,9 @@ import '../models/coach_link_data.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/dash_colors.dart';
-import '../widgets/usuario/coach_directory_section.dart';
-import '../widgets/usuario/coach_status_widgets.dart';
-import '../widgets/usuario/menu_button.dart';
+import '../widgets/usuario/entrenador/coach_directory_section.dart';
+import '../widgets/usuario/entrenador/coach_status_widgets.dart';
+import '../widgets/usuario/drawer/menu_button.dart';
 
 /// Pantalla "Mi entrenador" (`/usuario/entrenador`) replicando
 /// `VolleyScan_Next/src/app/usuario/entrenador/page.jsx` y `entrenador.module.css`.

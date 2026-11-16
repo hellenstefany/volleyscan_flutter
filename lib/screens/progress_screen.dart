@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/progress_data.dart';
 import '../theme/routine_colors.dart';
-import '../widgets/usuario/frequent_errors_card.dart';
-import '../widgets/usuario/performance_chart_card.dart';
-import '../widgets/usuario/progress_stat_cards.dart';
-import '../widgets/usuario/technique_donut_card.dart';
-import '../widgets/usuario/menu_button.dart';
+import '../widgets/usuario/progreso/frequent_errors_card.dart';
+import '../widgets/usuario/progreso/performance_chart_card.dart';
+import '../widgets/usuario/progreso/progress_stat_cards.dart';
+import '../widgets/usuario/progreso/technique_donut_card.dart';
+import '../widgets/usuario/drawer/menu_button.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});

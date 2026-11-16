@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/routine_colors.dart';
-import '../widgets/usuario/empty_history_card.dart';
+import '../widgets/usuario/historial/empty_history_card.dart';
 import 'analysis_screen.dart';
-import '../widgets/usuario/menu_button.dart';
+import '../widgets/usuario/drawer/menu_button.dart';
 
 class AiHistoryScreen extends StatefulWidget {
   const AiHistoryScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/dash_colors.dart';
-import '../dash_card.dart';
+import '../shared/dash_card.dart';
 
 /// Cabecera interna de las tarjetas de "Tu progreso" (`.ct` en `mi-progreso.module.css`).
 class ProgresoCardHeader extends StatelessWidget {

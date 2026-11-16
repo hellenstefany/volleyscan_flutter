@@ -4,16 +4,16 @@ import '../screens/login_screen.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/dash_colors.dart';
-import '../widgets/usuario/dash_card.dart';
-import '../widgets/usuario/menu_button.dart';
-import '../widgets/usuario/settings_analysis_card.dart';
-import '../widgets/usuario/settings_devices_card.dart';
-import '../widgets/usuario/settings_general_card.dart';
-import '../widgets/usuario/settings_help_card.dart';
-import '../widgets/usuario/settings_notifications_card.dart';
-import '../widgets/usuario/settings_privacy_card.dart';
-import '../widgets/usuario/settings_privacy_detail_card.dart';
-import '../widgets/usuario/settings_section_tabs.dart';
+import '../widgets/usuario/shared/dash_card.dart';
+import '../widgets/usuario/drawer/menu_button.dart';
+import '../widgets/usuario/configuracion/settings_analysis_card.dart';
+import '../widgets/usuario/configuracion/settings_devices_card.dart';
+import '../widgets/usuario/configuracion/settings_general_card.dart';
+import '../widgets/usuario/configuracion/settings_help_card.dart';
+import '../widgets/usuario/configuracion/settings_notifications_card.dart';
+import '../widgets/usuario/configuracion/settings_privacy_card.dart';
+import '../widgets/usuario/configuracion/settings_privacy_detail_card.dart';
+import '../widgets/usuario/configuracion/settings_section_tabs.dart';
 
 /// Pantalla de Configuración alineada con `VolleyScan_Next/src/app/usuario/configuracion/page.jsx`.
 class SettingsScreen extends StatefulWidget {

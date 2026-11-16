@@ -3,12 +3,12 @@ import '../models/content_data.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/dash_colors.dart';
-import '../widgets/usuario/content_category_tabs.dart';
-import '../widgets/usuario/content_state_views.dart';
-import '../widgets/usuario/content_video_card.dart';
-import '../widgets/usuario/content_video_dialog.dart';
-import '../widgets/usuario/dash_card.dart';
-import '../widgets/usuario/menu_button.dart';
+import '../widgets/usuario/contenido/content_category_tabs.dart';
+import '../widgets/usuario/contenido/content_state_views.dart';
+import '../widgets/usuario/contenido/content_video_card.dart';
+import '../widgets/usuario/contenido/content_video_dialog.dart';
+import '../widgets/usuario/shared/dash_card.dart';
+import '../widgets/usuario/drawer/menu_button.dart';
 
 /// Pantalla "Contenido Educativo" alineada con `VolleyScan_Next/src/app/usuario/contenido/page.jsx`.
 class ContentScreen extends StatefulWidget {

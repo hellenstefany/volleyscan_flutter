@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/notification_data.dart';
 import '../theme/routine_colors.dart';
-import '../widgets/usuario/notification_filters.dart';
-import '../widgets/usuario/notification_item.dart';
-import '../widgets/usuario/recommendation_card.dart';
+import '../widgets/usuario/notificaciones/notification_filters.dart';
+import '../widgets/usuario/notificaciones/notification_item.dart';
+import '../widgets/usuario/notificaciones/recommendation_card.dart';
 import 'analysis_screen.dart';
 import 'routines_screen.dart';
-import '../widgets/usuario/menu_button.dart';
+import '../widgets/usuario/drawer/menu_button.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});

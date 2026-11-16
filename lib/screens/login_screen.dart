@@ -7,7 +7,7 @@ import '../widgets/auth/auth_logo.dart';
 import '../widgets/auth/auth_text_field.dart';
 import '../widgets/auth/gradient_button.dart';
 import '../widgets/auth/social_button.dart';
-import '../widgets/usuario/dash_card.dart';
+import '../widgets/usuario/shared/dash_card.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 

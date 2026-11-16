@@ -6,14 +6,14 @@ import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/dash_colors.dart';
 import '../utils/bottom_nav_router.dart';
-import '../widgets/usuario/dash_card.dart';
-import '../widgets/usuario/dashboard_bottom_nav.dart';
-import '../widgets/usuario/menu_button.dart';
-import '../widgets/usuario/personal_info_form.dart';
-import '../widgets/usuario/preferences_form.dart';
-import '../widgets/usuario/profile_section_tabs.dart';
-import '../widgets/usuario/profile_summary_card.dart';
-import '../widgets/usuario/security_form.dart';
+import '../widgets/usuario/shared/dash_card.dart';
+import '../widgets/usuario/shared/dashboard_bottom_nav.dart';
+import '../widgets/usuario/drawer/menu_button.dart';
+import '../widgets/usuario/perfil/personal_info_form.dart';
+import '../widgets/usuario/perfil/preferences_form.dart';
+import '../widgets/usuario/perfil/profile_section_tabs.dart';
+import '../widgets/usuario/perfil/profile_summary_card.dart';
+import '../widgets/usuario/perfil/security_form.dart';
 
 /// Pantalla "Perfil de Usuario" alineada con `VolleyScan_Next/src/app/usuario/perfil/page.jsx`.
 class ProfileScreen extends StatefulWidget {

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../models/progreso_atleta_data.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/dash_colors.dart';
-import '../dash_card.dart';
-import '../sparkline.dart';
+import '../shared/dash_card.dart';
+import '../shared/sparkline.dart';
 import 'progreso_shared.dart';
 
 /// Tarjeta "Evolución de tu técnica" (`Evolucion` en `MiProgreso.jsx`).
