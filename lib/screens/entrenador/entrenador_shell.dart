@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:volleyscan_mobile/widgets/entrenador/sidebar_entrenador.dart';
+import 'package:volleyscan_mobile/widgets/entrenador/pantalla_pendiente.dart';
 import 'dashboard_screen.dart' as entrenador;
 import 'perfil_screen.dart';
+import 'equipos_screen.dart';
 import 'gestion_screen.dart';
 import 'horario_screen.dart';
 import 'estadisticas_screen.dart';
@@ -16,6 +18,20 @@ const _barBorder = Color(0x12FFFFFF);
 const _active = Color(0xFF3B82F6);
 const _inactive = Color(0xFF8892B0);
 
+// Índices del menú (mismo orden que el sidebar)
+const _iDashboard = 0;
+const _iPerfil = 1;
+const _iDeportistas = 2;
+const _iEquipos = 3;
+const _iHorario = 4;
+const _iPartidos = 5;
+const _iEstadisticas = 6;
+const _iRutinas = 7;
+const _iRegistroRutinas = 8;
+const _iReportes = 9;
+const _iAnalisis = 10;
+// 11 = Configuración
+
 class EntrenadorShell extends StatefulWidget {
   const EntrenadorShell({super.key});
 
@@ -25,26 +41,31 @@ class EntrenadorShell extends StatefulWidget {
 
 class _EntrenadorShellState extends State<EntrenadorShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  int _index = 0;
+  int _index = _iDashboard;
 
-  // Mismo orden que los índices del sidebar. Ajusta los nombres de clase.
   Widget _page() {
     switch (_index) {
-      case 0:
+      case _iDashboard:
         return const entrenador.DashboardScreen();
-      case 1:
+      case _iPerfil:
         return const PerfilScreen();
-      case 2:
+      case _iDeportistas:
         return const GestionScreen();
-      case 3:
+      case _iEquipos:
+        return const EquiposScreen();
+      case _iHorario:
         return const HorarioScreen();
-      case 4:
+      case _iPartidos:
+        return const PantallaPendiente(titulo: 'Partidos');
+      case _iEstadisticas:
         return const EstadisticasScreen();
-      case 5:
+      case _iRutinas:
         return const RutinasScreen();
-      case 6:
+      case _iRegistroRutinas:
+        return const PantallaPendiente(titulo: 'Registro de rutinas');
+      case _iReportes:
         return const ReportesScreen();
-      case 7:
+      case _iAnalisis:
         return const AnalisisScreen();
       default:
         return const ConfiguracionScreen();
@@ -119,7 +140,7 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
               ),
             ],
           ),
-          // Botón central redondo "Scan IA" → Análisis IA (índice 7)
+          // Botón central redondo "Scan IA" → Análisis IA
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,
           floatingActionButton: SizedBox(
@@ -131,7 +152,7 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
               shape: const CircleBorder(
                 side: BorderSide(color: Color(0x663B82F6), width: 4),
               ),
-              onPressed: () => _go(7),
+              onPressed: () => _go(_iAnalisis),
               child: const Icon(
                 Icons.camera_alt_rounded,
                 color: Colors.white,
@@ -154,14 +175,14 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
                   _BarItem(
                     icon: Icons.home_rounded,
                     label: 'Inicio',
-                    active: _index == 0,
-                    onTap: () => _go(0),
+                    active: _index == _iDashboard,
+                    onTap: () => _go(_iDashboard),
                   ),
                   _BarItem(
                     icon: Icons.groups_rounded,
                     label: 'Deportistas',
-                    active: _index == 2,
-                    onTap: () => _go(2),
+                    active: _index == _iDeportistas,
+                    onTap: () => _go(_iDeportistas),
                   ),
                   // Hueco para el botón central, con su etiqueta
                   Expanded(
@@ -174,7 +195,7 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
-                            color: _index == 7 ? _active : _inactive,
+                            color: _index == _iAnalisis ? _active : _inactive,
                           ),
                         ),
                       ),
@@ -183,14 +204,14 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
                   _BarItem(
                     icon: Icons.bar_chart_rounded,
                     label: 'Estadísticas',
-                    active: _index == 4,
-                    onTap: () => _go(4),
+                    active: _index == _iEstadisticas,
+                    onTap: () => _go(_iEstadisticas),
                   ),
                   _BarItem(
                     icon: Icons.person_rounded,
                     label: 'Perfil',
-                    active: _index == 1,
-                    onTap: () => _go(1),
+                    active: _index == _iPerfil,
+                    onTap: () => _go(_iPerfil),
                   ),
                 ],
               ),
