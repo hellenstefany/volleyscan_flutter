@@ -5,6 +5,7 @@ import '../screens/coach_screen.dart';
 import '../screens/content_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/history_screen.dart';
+import '../screens/matches_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/progress_screen.dart';
@@ -56,11 +57,7 @@ void goToMenuItem(
       replace(const ScheduleScreen());
       break;
     case 'partidos':
-      showAppToast(
-        context,
-        'Próximamente disponible: Mis partidos',
-        type: 'info',
-      );
+      replace(const MatchesScreen());
       break;
     case 'rutinas':
       replace(const RoutinesScreen());
