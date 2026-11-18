@@ -1,32 +1,34 @@
 import 'package:flutter/material.dart';
-import '../../../theme/entrenador_colors.dart';
+
+import '../../../theme/app_theme.dart';
+import '../../../theme/dash_colors.dart';
 
 BoxDecoration perfilCardDeco() => BoxDecoration(
-  color: EC.bgCard,
-  borderRadius: BorderRadius.circular(16),
-  border: Border.all(color: EC.border),
+  color: DashColors.cardDark,
+  borderRadius: BorderRadius.circular(AppRadii.panel),
+  border: Border.all(color: DashColors.border),
 );
 
 InputDecoration perfilInputDeco({String? hint, String? error}) =>
     InputDecoration(
       isDense: true,
       filled: true,
-      fillColor: EC.bgCard2,
+      fillColor: DashColors.card2,
       hintText: hint,
-      hintStyle: const TextStyle(color: EC.text3),
+      hintStyle: const TextStyle(color: DashColors.text3, fontSize: 13.5),
       errorText: error,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: EC.border2),
+        borderSide: const BorderSide(color: DashColors.border2),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: EC.border2),
+        borderSide: const BorderSide(color: DashColors.border2),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: EC.accent),
+        borderSide: const BorderSide(color: DashColors.blueLight),
       ),
     );
 
@@ -39,15 +41,18 @@ class PerfilTag extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
     decoration: BoxDecoration(
-      color: EC.bgHover,
+      color: DashColors.hover,
       borderRadius: BorderRadius.circular(20),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: EC.accent2),
+        Icon(icon, size: 13, color: DashColors.accent2),
         const SizedBox(width: 6),
-        Text(text, style: const TextStyle(fontSize: 12, color: EC.text2)),
+        Text(
+          text,
+          style: const TextStyle(fontSize: 12, color: DashColors.textMuted),
+        ),
       ],
     ),
   );
@@ -69,11 +74,11 @@ class PerfilCardHeader extends StatelessWidget {
     margin: const EdgeInsets.only(bottom: 24),
     padding: const EdgeInsets.only(bottom: 12),
     decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: EC.border)),
+      border: Border(bottom: BorderSide(color: DashColors.border)),
     ),
     child: Row(
       children: [
-        Icon(icon, size: 18, color: EC.accent2),
+        Icon(icon, size: 18, color: DashColors.accent2),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
@@ -81,7 +86,7 @@ class PerfilCardHeader extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: EC.text1,
+              color: DashColors.text1,
             ),
           ),
         ),
@@ -108,7 +113,7 @@ class PerfilFormGroup extends StatelessWidget {
             fontSize: 11,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.6,
-            color: EC.text3,
+            color: DashColors.text3,
           ),
         ),
         const SizedBox(height: 6),
@@ -120,58 +125,71 @@ class PerfilFormGroup extends StatelessWidget {
 
 class PerfilValueText extends StatelessWidget {
   final String text;
-  const PerfilValueText(this.text, {super.key});
+  final Color? color;
+  const PerfilValueText(this.text, {super.key, this.color});
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 10),
-    child: Text(text, style: const TextStyle(fontSize: 14, color: EC.text1)),
-  );
+  Widget build(BuildContext context) {
+    final display = text.trim().isNotEmpty ? text : '—';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Text(
+        display,
+        style: TextStyle(fontSize: 14, color: color ?? DashColors.text1),
+      ),
+    );
+  }
 }
 
 class PerfilGradientButton extends StatelessWidget {
   final IconData? icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final bool loading;
+
   const PerfilGradientButton({
     super.key,
     this.icon,
     required this.label,
     required this.onTap,
+    this.loading = false,
   });
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: Colors.transparent,
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Ink(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [EC.accent, EC.purple],
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 16, color: Colors.white),
-              const SizedBox(width: 8),
-            ],
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+  Widget build(BuildContext context) => Opacity(
+    opacity: (onTap == null || loading) ? 0.7 : 1,
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: loading ? null : onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [DashColors.blueLight, DashColors.sidebarActiveBorder],
             ),
-          ],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 16, color: Colors.white),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                loading ? 'Guardando…' : label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     ),

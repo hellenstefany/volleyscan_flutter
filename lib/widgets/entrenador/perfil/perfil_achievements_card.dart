@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../theme/entrenador_colors.dart';
+
+import '../../../theme/dash_colors.dart';
 import 'perfil_common_widgets.dart';
 import 'perfil_model.dart';
 
-/// Tarjeta "Logros recientes".
+/// Tarjeta "Logros recientes" (`.achievements-card` en `page.jsx` / `Perfil.module.css`).
 class PerfilAchievementsCard extends StatelessWidget {
   final List<Achievement> achievements;
   final VoidCallback onAdd;
@@ -25,7 +26,7 @@ class PerfilAchievementsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const PerfilCardHeader(
-            icon: Icons.emoji_events,
+            icon: Icons.emoji_events_rounded,
             title: 'Logros recientes',
           ),
           if (achievements.isEmpty)
@@ -34,7 +35,7 @@ class PerfilAchievementsCard extends StatelessWidget {
               child: Center(
                 child: Text(
                   'No hay logros aún',
-                  style: TextStyle(color: EC.text3),
+                  style: TextStyle(color: DashColors.text3),
                 ),
               ),
             )
@@ -51,19 +52,19 @@ class PerfilAchievementsCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: EC.accent.withOpacity(0.08),
+                color: DashColors.blueLight.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: EC.border2),
+                border: Border.all(color: DashColors.border2),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add, size: 16, color: EC.accent2),
+                  Icon(Icons.add_rounded, size: 16, color: DashColors.accent2),
                   SizedBox(width: 8),
                   Text(
                     'Añadir logro',
                     style: TextStyle(
-                      color: EC.accent2,
+                      color: DashColors.accent2,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -87,7 +88,7 @@ class AchievementItem extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: EC.bgCard2,
+      color: DashColors.card2,
       borderRadius: BorderRadius.circular(12),
     ),
     child: Row(
@@ -97,7 +98,7 @@ class AchievementItem extends StatelessWidget {
           height: 48,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: EC.bgCard,
+            color: DashColors.cardDark,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(a.icon, style: const TextStyle(fontSize: 26)),
@@ -112,13 +113,16 @@ class AchievementItem extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: EC.text1,
+                  color: DashColors.text1,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 a.description,
-                style: const TextStyle(fontSize: 12, color: EC.text2),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: DashColors.textMuted,
+                ),
               ),
             ],
           ),
@@ -130,10 +134,14 @@ class AchievementItem extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: EC.red.withOpacity(0.1),
+              color: DashColors.red.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.delete_outline, size: 16, color: EC.red),
+            child: const Icon(
+              Icons.delete_outline_rounded,
+              size: 16,
+              color: DashColors.red,
+            ),
           ),
         ),
       ],

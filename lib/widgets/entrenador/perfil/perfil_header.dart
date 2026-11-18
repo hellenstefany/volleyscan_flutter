@@ -1,24 +1,39 @@
 import 'package:flutter/material.dart';
-import '../../../theme/entrenador_colors.dart';
+
+import '../../../theme/dash_colors.dart';
 import 'perfil_common_widgets.dart';
 import 'perfil_model.dart';
 
-/// Cabecera: avatar, nombre, club, etiquetas y botón Editar/Ver perfil.
+/// Cabecera del Perfil del Entrenador (`.profile-header` en `Perfil.module.css`).
 class PerfilHeader extends StatelessWidget {
-  final bool ancho, isEditing;
-  final Map<String, String> profile;
-  final VoidCallback onToggleEdit;
+  final bool ancho;
+  final bool isEditing;
+  final bool loading;
+  final EntrenadorPerfilData? profile;
+  final VoidCallback? onToggleEdit;
 
   const PerfilHeader({
     super.key,
     required this.ancho,
     required this.isEditing,
+    required this.loading,
     required this.profile,
     required this.onToggleEdit,
   });
 
   @override
   Widget build(BuildContext context) {
+    final p = profile;
+    final initials = p?.iniciales ?? 'EN';
+    final fullName = p?.nombreCompleto ?? 'Entrenador';
+    final clubSuffix =
+        (p != null && p.club.trim().isNotEmpty) ? ' · ${p.club.trim()}' : '';
+    final badgeText = 'Entrenador principal$clubSuffix';
+    final expText = (p != null && p.experiencia.trim().isNotEmpty)
+        ? '${p.experiencia.trim()} años de experiencia'
+        : '— años de experiencia';
+    final levelText = p?.nivelEtiqueta ?? 'Sin nivel';
+
     final avatar = Container(
       width: 100,
       height: 100,
@@ -28,42 +43,57 @@ class PerfilHeader extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E293B), Color(0xFF334155)],
+          colors: [DashColors.hover, DashColors.cardHover],
         ),
-        border: Border.all(color: EC.accent.withOpacity(0.3), width: 3),
+        border: Border.all(
+          color: DashColors.blueLight.withValues(alpha: 0.3),
+          width: 3,
+        ),
         boxShadow: [
-          BoxShadow(color: EC.accent.withOpacity(0.2), blurRadius: 24),
+          BoxShadow(
+            color: DashColors.blueLight.withValues(alpha: 0.2),
+            blurRadius: 24,
+          ),
         ],
       ),
       child: Text(
-        perfilInitials(profile['fullName']!),
+        initials,
         style: const TextStyle(
           fontSize: 40,
           fontWeight: FontWeight.bold,
-          color: EC.accent2,
+          color: DashColors.accent2,
         ),
       ),
     );
 
     final info = Column(
-      crossAxisAlignment: ancho
-          ? CrossAxisAlignment.start
-          : CrossAxisAlignment.center,
+      crossAxisAlignment:
+          ancho ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
-        Text(
-          profile['fullName']!,
-          textAlign: ancho ? TextAlign.start : TextAlign.center,
-          style: const TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: EC.text1,
+        if (loading && p == null)
+          Container(
+            width: 220,
+            height: 28,
+            decoration: BoxDecoration(
+              color: DashColors.hover,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          )
+        else
+          Text(
+            fullName,
+            textAlign: ancho ? TextAlign.start : TextAlign.center,
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: DashColors.text1,
+            ),
           ),
-        ),
         const SizedBox(height: 6),
         Text(
-          'Entrenador principal · ${profile['club']}',
+          badgeText,
           textAlign: ancho ? TextAlign.start : TextAlign.center,
-          style: const TextStyle(fontSize: 14, color: EC.text2),
+          style: const TextStyle(fontSize: 14, color: DashColors.textMuted),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -71,11 +101,8 @@ class PerfilHeader extends StatelessWidget {
           runSpacing: 8,
           alignment: ancho ? WrapAlignment.start : WrapAlignment.center,
           children: [
-            PerfilTag(Icons.verified, profile['level']!),
-            PerfilTag(
-              Icons.schedule,
-              '${profile['experience']} años de experiencia',
-            ),
+            PerfilTag(Icons.verified_rounded, levelText),
+            PerfilTag(Icons.schedule_rounded, expText),
           ],
         ),
       ],
@@ -83,12 +110,15 @@ class PerfilHeader extends StatelessWidget {
 
     final boton = OutlinedButton.icon(
       onPressed: onToggleEdit,
-      icon: Icon(isEditing ? Icons.visibility : Icons.edit, size: 16),
+      icon: Icon(
+        isEditing ? Icons.visibility_rounded : Icons.edit_rounded,
+        size: 16,
+      ),
       label: Text(isEditing ? 'Ver perfil' : 'Editar perfil'),
       style: OutlinedButton.styleFrom(
-        foregroundColor: EC.accent2,
-        backgroundColor: EC.accent.withOpacity(0.1),
-        side: BorderSide(color: EC.accent.withOpacity(0.3)),
+        foregroundColor: DashColors.accent2,
+        backgroundColor: DashColors.blueLight.withValues(alpha: 0.1),
+        side: BorderSide(color: DashColors.blueLight.withValues(alpha: 0.3)),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
