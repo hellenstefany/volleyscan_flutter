@@ -11,6 +11,7 @@ import '../models/coach_link_data.dart';
 import '../models/my_level_data.dart';
 import '../models/my_matches_data.dart';
 import '../models/my_teams_data.dart';
+import '../models/notification_data.dart';
 import '../models/routine_data.dart';
 import '../models/schedule_data.dart';
 import '../models/content_data.dart';
@@ -599,6 +600,51 @@ class ApiService {
       return AvisosContadorResponse.fromJson(Map<String, dynamic>.from(data));
     }
     return const AvisosContadorResponse(noLeidas: 0);
+  }
+
+  /// Lista las notificaciones/avisos del usuario (`GET /api/ia/avisos`).
+  Future<AvisosListResponse> listarAvisos({
+    int limite = 100,
+    bool todas = true,
+    bool soloNoLeidas = false,
+  }) async {
+    final params = <String>[
+      'limite=$limite',
+      if (soloNoLeidas) 'soloNoLeidas=1',
+      if (todas) 'todas=1',
+    ];
+    final data = await get('/ia/avisos?${params.join('&')}');
+    if (data is Map) {
+      return AvisosListResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const AvisosListResponse();
+  }
+
+  /// Marca un aviso como leído (`POST /api/ia/avisos/<id>/leida`).
+  Future<int> marcarAvisoLeida(int id, {bool todas = true}) async {
+    final query = todas ? '?todas=1' : '';
+    final data = await post('/ia/avisos/$id/leida$query', const <String, dynamic>{});
+    if (data is Map && data['noLeidas'] != null) {
+      return int.tryParse(data['noLeidas'].toString()) ?? 0;
+    }
+    return 0;
+  }
+
+  /// Marca todos los avisos como leídos (`POST /api/ia/avisos/leer-todas`).
+  Future<void> marcarTodosLosAvisosLeidos({bool todas = true}) async {
+    final query = todas ? '?todas=1' : '';
+    await post('/ia/avisos/leer-todas$query', const <String, dynamic>{});
+  }
+
+  /// Elimina un aviso (`DELETE /api/ia/avisos/<id>`).
+  Future<void> eliminarAviso(int id) async {
+    await delete('/ia/avisos/$id');
+  }
+
+  /// Elimina todos los avisos del usuario (`DELETE /api/ia/avisos`).
+  Future<void> eliminarTodosLosAvisos({bool todas = true}) async {
+    final query = todas ? '?todas=1' : '';
+    await delete('/ia/avisos$query');
   }
 
   // ---------- Contenido Educativo ----------
