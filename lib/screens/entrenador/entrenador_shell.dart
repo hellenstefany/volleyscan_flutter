@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:volleyscan_mobile/theme/app_theme.dart';
+import 'package:volleyscan_mobile/theme/dash_colors.dart';
 import 'package:volleyscan_mobile/widgets/entrenador/sidebar_entrenador.dart';
-import 'package:volleyscan_mobile/widgets/entrenador/pantalla_pendiente.dart';
 import 'dashboard_screen.dart' as entrenador;
 import 'perfil_screen.dart';
 import 'equipos_screen.dart';
@@ -13,27 +14,10 @@ import 'reportes_screen.dart';
 import 'analisis_screen.dart';
 import 'configuracion_screen.dart';
 
-const _bar = Color(0xFF0C1020);
-const _barBorder = Color(0x12FFFFFF);
-const _active = Color(0xFF3B82F6);
-const _inactive = Color(0xFF8892B0);
-
-// Índices del menú (mismo orden que el sidebar)
-const _iDashboard = 0;
-const _iPerfil = 1;
-const _iDeportistas = 2;
-const _iEquipos = 3;
-const _iHorario = 4;
-const _iPartidos = 5;
-const _iEstadisticas = 6;
-const _iRutinas = 7;
-const _iRegistroRutinas = 8;
-const _iReportes = 9;
-const _iAnalisis = 10;
-// 11 = Configuración
-
 class EntrenadorShell extends StatefulWidget {
-  const EntrenadorShell({super.key});
+  const EntrenadorShell({super.key, this.initialId = 'dashboard'});
+
+  final String initialId;
 
   @override
   State<EntrenadorShell> createState() => _EntrenadorShellState();
@@ -41,44 +25,54 @@ class EntrenadorShell extends StatefulWidget {
 
 class _EntrenadorShellState extends State<EntrenadorShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  int _index = _iDashboard;
+  late String _selectedId = widget.initialId;
+
+  static const _pendientes = <String, String>{
+    'partidos': 'Partidos',
+    'registro_rutinas': 'Registro de rutinas',
+  };
 
   Widget _page() {
-    switch (_index) {
-      case _iDashboard:
+    switch (_selectedId) {
+      case 'dashboard':
         return const entrenador.DashboardScreen();
-      case _iPerfil:
+      case 'perfil':
         return const PerfilScreen();
-      case _iDeportistas:
+      case 'gestion':
         return const GestionScreen();
-      case _iEquipos:
+      case 'equipos':
         return const EquiposScreen();
-      case _iHorario:
+      case 'horario':
         return const HorarioScreen();
-      case _iPartidos:
-        return const PantallaPendiente(titulo: 'Partidos');
-      case _iEstadisticas:
+      case 'estadisticas':
         return const EstadisticasScreen();
-      case _iRutinas:
+      case 'rutinas':
         return const RutinasScreen();
-      case _iRegistroRutinas:
-        return const PantallaPendiente(titulo: 'Registro de rutinas');
-      case _iReportes:
+      case 'reportes':
         return const ReportesScreen();
-      case _iAnalisis:
+      case 'analisis':
         return const AnalisisScreen();
-      default:
+      case 'configuracion':
         return const ConfiguracionScreen();
+      default:
+        return const entrenador.DashboardScreen();
     }
   }
 
-  void _go(int i) => setState(() => _index = i);
+  void _go(String id) {
+    _scaffoldKey.currentState?.closeDrawer();
+    final pendiente = _pendientes[id];
+    if (pendiente != null) {
+      showAppToast(context, 'Próximamente: $pendiente', type: 'info');
+      return;
+    }
+    setState(() => _selectedId = id);
+  }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, c) {
-        // Se decide con el ancho real disponible, no con el de la ventana
         final wide = c.maxWidth >= 900;
 
         // Escritorio: sidebar fija
@@ -86,7 +80,7 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
           return Scaffold(
             body: Row(
               children: [
-                EntrenadorSidebar(selectedIndex: _index, onSelect: _go),
+                EntrenadorSidebar(selectedId: _selectedId, onSelect: _go),
                 Expanded(child: _page()),
               ],
             ),
@@ -96,31 +90,27 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
         // Móvil: barra inferior + drawer con el menú completo
         return Scaffold(
           key: _scaffoldKey,
-          backgroundColor: const Color(0xFF0F1425),
+          backgroundColor: DashColors.bg,
           drawer: Drawer(
             width: 260,
-            backgroundColor: _bar,
+            backgroundColor: DashColors.sidebarBg,
             child: EntrenadorSidebar(
-              selectedIndex: _index,
-              onSelect: (i) {
-                _go(i);
-                _scaffoldKey.currentState?.closeDrawer();
-              },
+              selectedId: _selectedId,
+              onSelect: _go,
             ),
           ),
           body: Stack(
             children: [
               _page(),
-              // Botón de menú flotante
               Positioned(
                 top: 12,
                 left: 12,
                 child: SafeArea(
                   child: Material(
-                    color: _bar,
+                    color: DashColors.sidebarBg,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(color: Color(0x1FFFFFFF)),
+                      side: const BorderSide(color: DashColors.border2),
                     ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(10),
@@ -130,7 +120,7 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
                         height: 40,
                         child: Icon(
                           Icons.menu,
-                          color: Color(0xFFE8EAF6),
+                          color: DashColors.text1,
                           size: 20,
                         ),
                       ),
@@ -140,7 +130,6 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
               ),
             ],
           ),
-          // Botón central redondo "Scan IA" → Análisis IA
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,
           floatingActionButton: SizedBox(
@@ -148,11 +137,11 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
             height: 60,
             child: FloatingActionButton(
               elevation: 6,
-              backgroundColor: const Color(0xFF2563EB),
+              backgroundColor: DashColors.blue,
               shape: const CircleBorder(
-                side: BorderSide(color: Color(0x663B82F6), width: 4),
+                side: BorderSide(color: DashColors.blueGlow, width: 4),
               ),
-              onPressed: () => _go(_iAnalisis),
+              onPressed: () => _go('analisis'),
               child: const Icon(
                 Icons.camera_alt_rounded,
                 color: Colors.white,
@@ -161,30 +150,29 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
             ),
           ),
           bottomNavigationBar: BottomAppBar(
-            color: _bar,
+            color: DashColors.sidebarBg,
             height: 66,
             padding: EdgeInsets.zero,
             shape: const CircularNotchedRectangle(),
             notchMargin: 8,
             child: Container(
               decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: _barBorder)),
+                border: Border(top: BorderSide(color: DashColors.borderSubtle)),
               ),
               child: Row(
                 children: [
                   _BarItem(
                     icon: Icons.home_rounded,
                     label: 'Inicio',
-                    active: _index == _iDashboard,
-                    onTap: () => _go(_iDashboard),
+                    active: _selectedId == 'dashboard',
+                    onTap: () => _go('dashboard'),
                   ),
                   _BarItem(
                     icon: Icons.groups_rounded,
                     label: 'Deportistas',
-                    active: _index == _iDeportistas,
-                    onTap: () => _go(_iDeportistas),
+                    active: _selectedId == 'gestion',
+                    onTap: () => _go('gestion'),
                   ),
-                  // Hueco para el botón central, con su etiqueta
                   Expanded(
                     child: Align(
                       alignment: Alignment.bottomCenter,
@@ -195,7 +183,9 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
-                            color: _index == _iAnalisis ? _active : _inactive,
+                            color: _selectedId == 'analisis'
+                                ? DashColors.blueLight
+                                : DashColors.textMuted,
                           ),
                         ),
                       ),
@@ -204,14 +194,14 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
                   _BarItem(
                     icon: Icons.bar_chart_rounded,
                     label: 'Estadísticas',
-                    active: _index == _iEstadisticas,
-                    onTap: () => _go(_iEstadisticas),
+                    active: _selectedId == 'estadisticas',
+                    onTap: () => _go('estadisticas'),
                   ),
                   _BarItem(
                     icon: Icons.person_rounded,
                     label: 'Perfil',
-                    active: _index == _iPerfil,
-                    onTap: () => _go(_iPerfil),
+                    active: _selectedId == 'perfil',
+                    onTap: () => _go('perfil'),
                   ),
                 ],
               ),
@@ -238,7 +228,7 @@ class _BarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? _active : _inactive;
+    final color = active ? DashColors.blueLight : DashColors.textMuted;
     return Expanded(
       child: InkWell(
         onTap: onTap,
