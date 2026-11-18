@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/coach_link_data.dart';
+import '../models/my_matches_data.dart';
 import '../models/my_teams_data.dart';
 import '../models/schedule_data.dart';
 import '../models/content_data.dart';
@@ -739,6 +740,17 @@ class ApiService {
           .toList();
     }
     return const <ScheduleEvent>[];
+  }
+
+  // ---------- Mis Partidos (Deportista) ----------
+
+  /// Obtiene los partidos jugados del atleta y su acumulado (`GET /api/ia/mis-partidos`).
+  Future<MyMatchesResponse> misPartidos() async {
+    final data = await get('/ia/mis-partidos');
+    if (data is Map) {
+      return MyMatchesResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const MyMatchesResponse();
   }
 
   /// Convierte URL relativa `/media/...` en absoluta respecto al host del backend.
