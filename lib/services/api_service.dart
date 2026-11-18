@@ -21,6 +21,7 @@ import '../models/preferences_data.dart';
 import '../models/profile_data.dart';
 import '../models/progreso_atleta_data.dart';
 import '../widgets/entrenador/dashboard/dashboard_models.dart';
+import '../widgets/entrenador/gestion/gestion_athlete.dart';
 import '../widgets/entrenador/perfil/perfil_model.dart';
 import '../screens/login_screen.dart';
 import '../theme/app_theme.dart';
@@ -971,6 +972,134 @@ class ApiService {
     throw const ApiException(
       statusCode: 0,
       message: 'Error al actualizar el perfil',
+    );
+  }
+
+  // ---------- Deportistas del Entrenador (/api/ia/vinculos/...) ----------
+
+  /// Lista los deportistas con vínculo aceptado (`GET /api/ia/vinculos/deportistas`).
+  Future<List<EntrenadorDeportista>> listarDeportistasEntrenador({
+    String? q,
+  }) async {
+    final query = (q != null && q.trim().isNotEmpty)
+        ? '?q=${Uri.encodeQueryComponent(q.trim())}'
+        : '';
+    final data = await get('/ia/vinculos/deportistas$query');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map(
+            (m) => EntrenadorDeportista.fromJson(
+              Map<String, dynamic>.from(m),
+            ),
+          )
+          .toList();
+    }
+    return const <EntrenadorDeportista>[];
+  }
+
+  /// Lista las solicitudes pendientes recibidas por el entrenador
+  /// (`GET /api/ia/vinculos/solicitudes-recibidas`).
+  Future<List<EntrenadorDeportista>> listarSolicitudesEntrenador() async {
+    final data = await get('/ia/vinculos/solicitudes-recibidas');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map(
+            (m) => EntrenadorDeportista.fromJson(
+              Map<String, dynamic>.from(m),
+            ),
+          )
+          .toList();
+    }
+    return const <EntrenadorDeportista>[];
+  }
+
+  /// Acepta o rechaza una solicitud pendiente (`POST /api/ia/vinculos/solicitudes/<id>/responder`).
+  Future<String> responderSolicitudEntrenador(
+    int vinculoId,
+    String accion,
+  ) async {
+    final data = await post(
+      '/ia/vinculos/solicitudes/$vinculoId/responder',
+      {'accion': accion},
+    );
+    if (data is Map && data['estado'] != null) {
+      return data['estado'].toString();
+    }
+    return accion == 'aceptar' ? 'aceptado' : 'rechazado';
+  }
+
+  /// Retira a un deportista de la lista del entrenador (`DELETE /api/ia/vinculos/deportistas/<atletaId>`).
+  Future<void> retirarDeportistaEntrenador(int atletaId) async {
+    await delete('/ia/vinculos/deportistas/$atletaId');
+  }
+
+  /// Obtiene la ficha de un deportista vinculado (`GET /api/ia/vinculos/deportistas/<atletaId>`).
+  Future<EntrenadorDeportista> fichaDeportistaEntrenador(int atletaId) async {
+    final data = await get('/ia/vinculos/deportistas/$atletaId');
+    if (data is Map) {
+      return EntrenadorDeportista.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo cargar la ficha del deportista.',
+    );
+  }
+
+  /// Lista las sesiones de análisis de IA de un deportista vinculado
+  /// (`GET /api/ia/vinculos/deportistas/<atletaId>/sesiones`).
+  Future<List<DeportistaSesionResumen>> sesionesDeDeportistaEntrenador(
+    int atletaId,
+  ) async {
+    final data = await get('/ia/vinculos/deportistas/$atletaId/sesiones');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map(
+            (m) => DeportistaSesionResumen.fromJson(
+              Map<String, dynamic>.from(m),
+            ),
+          )
+          .toList();
+    }
+    return const <DeportistaSesionResumen>[];
+  }
+
+  /// Obtiene el detalle de una sesión de IA de un deportista vinculado
+  /// (`GET /api/ia/vinculos/deportistas/<atletaId>/sesiones/<sesionId>`).
+  Future<DeportistaSesionDetalle> sesionDeDeportistaEntrenador(
+    int atletaId,
+    int sesionId,
+  ) async {
+    final data =
+        await get('/ia/vinculos/deportistas/$atletaId/sesiones/$sesionId');
+    if (data is Map) {
+      return DeportistaSesionDetalle.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo cargar el detalle de la sesión.',
+    );
+  }
+
+  /// Marca o quita la revisión del entrenador sobre una sesión de IA
+  /// (`POST /api/ia/vinculos/deportistas/<atletaId>/sesiones/<sesionId>/revision`).
+  Future<DeportistaSesionDetalle> revisarSesionDeportistaEntrenador(
+    int atletaId,
+    int sesionId,
+    bool revisada,
+  ) async {
+    final data = await post(
+      '/ia/vinculos/deportistas/$atletaId/sesiones/$sesionId/revision',
+      {'revisada': revisada},
+    );
+    if (data is Map) {
+      return DeportistaSesionDetalle.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo actualizar la revisión.',
     );
   }
 
