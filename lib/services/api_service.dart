@@ -20,6 +20,7 @@ import '../models/device_data.dart';
 import '../models/preferences_data.dart';
 import '../models/profile_data.dart';
 import '../models/progreso_atleta_data.dart';
+import '../widgets/entrenador/dashboard/dashboard_models.dart';
 import '../screens/login_screen.dart';
 import '../theme/app_theme.dart';
 
@@ -881,6 +882,49 @@ class ApiService {
       return MyLevelResponse.fromJson(Map<String, dynamic>.from(data));
     }
     return const MyLevelResponse();
+  }
+
+  // ---------- Panel de Entrenador ----------
+
+  /// Obtiene el resumen del dashboard del entrenador (`GET /api/panel/dashboard`, sin barra final).
+  Future<EntrenadorDashboardData> dashboardEntrenador() async {
+    final data = await get('/panel/dashboard');
+    if (data is Map) {
+      return EntrenadorDashboardData.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo cargar el resumen del dashboard.',
+    );
+  }
+
+  /// Crea una nueva sesión en el horario del entrenador (`POST /api/panel/horarios`, sin barra final).
+  Future<Map<String, dynamic>> crearHorarioEntrenador({
+    required String titulo,
+    required String tipoEvento,
+    required String fecha,
+    required String horaInicio,
+    required String horaFin,
+    String? ubicacion,
+    String? notas,
+    String estado = 'programado',
+  }) async {
+    final data = await post('/panel/horarios', {
+      'titulo': titulo.trim(),
+      'tipo_evento': tipoEvento,
+      'fecha': fecha,
+      'hora_inicio': horaInicio,
+      'hora_fin': horaFin,
+      'ubicacion': (ubicacion != null && ubicacion.trim().isNotEmpty)
+          ? ubicacion.trim()
+          : null,
+      'notas': (notas != null && notas.trim().isNotEmpty) ? notas.trim() : null,
+      'estado': estado,
+    });
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+    return const <String, dynamic>{};
   }
 
   // ---------- Chat IA (Microservicio :8010) ----------

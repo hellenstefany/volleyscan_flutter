@@ -1,41 +1,147 @@
 import 'package:flutter/material.dart';
 
-import 'dashboard_theme.dart';
+import '../../../theme/dash_colors.dart';
 
-// ── Modelos ──
-
-class DashboardPlayerData {
-  final String name;
-  final int pct;
-  final Color color;
-  final String initials;
-  final Color bg;
-  const DashboardPlayerData(
-    this.name,
-    this.pct,
-    this.color,
-    this.initials,
-    this.bg,
-  );
+int _toInt(dynamic value, [int fallback = 0]) {
+  if (value == null) return fallback;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString()) ?? fallback;
 }
 
-class DashboardActivity {
-  final String name;
-  final String action;
-  final String time;
-  final String initials;
-  final Color bg;
-  final bool icon;
-  const DashboardActivity(
-    this.name,
-    this.action,
-    this.time,
-    this.initials,
-    this.bg, {
-    this.icon = false,
+String _toStr(dynamic value, [String fallback = '']) {
+  if (value == null) return fallback;
+  return value.toString();
+}
+
+/// Evento próximo dentro de los 7 días siguientes (`eventos_proximos` en `GET /api/panel/dashboard`).
+class EntrenadorEventoProximo {
+  final int id;
+  final String titulo;
+  final String tipoEvento;
+  final String fecha;
+  final String horaInicio;
+  final String horaFin;
+  final String? ubicacion;
+
+  const EntrenadorEventoProximo({
+    required this.id,
+    required this.titulo,
+    required this.tipoEvento,
+    required this.fecha,
+    required this.horaInicio,
+    required this.horaFin,
+    this.ubicacion,
   });
+
+  factory EntrenadorEventoProximo.fromJson(Map<String, dynamic> json) {
+    final rawUbicacion = json['ubicacion']?.toString().trim();
+    return EntrenadorEventoProximo(
+      id: _toInt(json['id']),
+      titulo: _toStr(json['titulo']),
+      tipoEvento: _toStr(json['tipo_evento']),
+      fecha: _toStr(json['fecha']),
+      horaInicio: _toStr(json['hora_inicio']),
+      horaFin: _toStr(json['hora_fin']),
+      ubicacion:
+          (rawUbicacion != null && rawUbicacion.isNotEmpty) ? rawUbicacion : null,
+    );
+  }
+
+  /// Devuelve `HH:MM` igual que `String(ev.hora_inicio).slice(0, 5)` en `page.jsx`.
+  String get horaInicioCorta =>
+      horaInicio.length >= 5 ? horaInicio.substring(0, 5) : horaInicio;
 }
 
+/// Partido reciente del entrenador (`ultimos_partidos` en `GET /api/panel/dashboard`).
+class EntrenadorUltimoPartido {
+  final int id;
+  final String rival;
+  final String fecha;
+  final int setsGanados;
+  final int setsPerdidos;
+
+  const EntrenadorUltimoPartido({
+    required this.id,
+    required this.rival,
+    required this.fecha,
+    required this.setsGanados,
+    required this.setsPerdidos,
+  });
+
+  factory EntrenadorUltimoPartido.fromJson(Map<String, dynamic> json) {
+    return EntrenadorUltimoPartido(
+      id: _toInt(json['id']),
+      rival: _toStr(json['rival']),
+      fecha: _toStr(json['fecha']),
+      setsGanados: _toInt(json['sets_ganados']),
+      setsPerdidos: _toInt(json['sets_perdidos']),
+    );
+  }
+
+  /// Porcentaje de sets ganados: `totalSets > 0 ? Math.round((sets_ganados / totalSets) * 100) : 0`.
+  int get porcentajeSets {
+    final total = setsGanados + setsPerdidos;
+    if (total <= 0) return 0;
+    return ((setsGanados / total) * 100).round();
+  }
+
+  /// Iniciales del rival (`p.rival.slice(0, 2).toUpperCase() || 'VS'`).
+  String get iniciales {
+    final limpio = rival.trim();
+    if (limpio.isEmpty) return 'VS';
+    return (limpio.length >= 2 ? limpio.substring(0, 2) : limpio).toUpperCase();
+  }
+}
+
+/// Respuesta completa de `GET /api/panel/dashboard` (`DashboardView` en Django).
+class EntrenadorDashboardData {
+  final int equiposActivos;
+  final int deportistasActivos;
+  final int analisisPendientes;
+  final List<EntrenadorEventoProximo> eventosProximos;
+  final List<EntrenadorUltimoPartido> ultimosPartidos;
+
+  const EntrenadorDashboardData({
+    required this.equiposActivos,
+    required this.deportistasActivos,
+    required this.analisisPendientes,
+    required this.eventosProximos,
+    required this.ultimosPartidos,
+  });
+
+  factory EntrenadorDashboardData.fromJson(Map<String, dynamic> json) {
+    final rawEventos = json['eventos_proximos'];
+    final rawPartidos = json['ultimos_partidos'];
+    return EntrenadorDashboardData(
+      equiposActivos: _toInt(json['equipos_activos']),
+      deportistasActivos: _toInt(json['deportistas_activos']),
+      analisisPendientes: _toInt(json['analisis_pendientes']),
+      eventosProximos: rawEventos is List
+          ? rawEventos
+              .whereType<Map>()
+              .map(
+                (m) => EntrenadorEventoProximo.fromJson(
+                  Map<String, dynamic>.from(m),
+                ),
+              )
+              .toList()
+          : const <EntrenadorEventoProximo>[],
+      ultimosPartidos: rawPartidos is List
+          ? rawPartidos
+              .whereType<Map>()
+              .map(
+                (m) => EntrenadorUltimoPartido.fromJson(
+                  Map<String, dynamic>.from(m),
+                ),
+              )
+              .toList()
+          : const <EntrenadorUltimoPartido>[],
+    );
+  }
+}
+
+/// Modelo para una tarjeta KPI en la cuadrícula superior.
 class DashboardKpi {
   final Color color;
   final String icon;
@@ -43,7 +149,6 @@ class DashboardKpi {
   final int value;
   final String suffix;
   final String? sub;
-  final String? delta;
 
   const DashboardKpi(
     this.color,
@@ -52,99 +157,24 @@ class DashboardKpi {
     this.value,
     this.suffix, {
     this.sub,
-    this.delta,
   });
 }
 
-// ── Datos ──
-
-const dashboardPlayers = [
-  DashboardPlayerData(
-    'Juan Pérez',
-    85,
-    DashboardTheme.blue,
-    'JP',
-    Color(0xFF1E3A8A),
-  ),
-  DashboardPlayerData(
-    'María González',
-    78,
-    Color(0xFFEF4444),
-    'MG',
-    Color(0xFF7F1D1D),
-  ),
-  DashboardPlayerData(
-    'Carlos Ramírez',
-    72,
-    DashboardTheme.blue,
-    'CR',
-    Color(0xFF1E40AF),
-  ),
-  DashboardPlayerData(
-    'Sofía Ortega',
-    68,
-    DashboardTheme.green,
-    'SO',
-    Color(0xFF14532D),
-  ),
-  DashboardPlayerData(
-    'Andrés López',
-    65,
-    DashboardTheme.green,
-    'AL',
-    Color(0xFF166534),
-  ),
+/// Paleta cíclica de colores por fila en "Últimos partidos" (`COLORES_FILA` en `page.jsx`),
+/// expresada con tokens existentes de `DashColors`.
+const List<(Color color, Color bg)> dashboardRowPalette = [
+  (DashColors.sidebarLogoBlue, DashColors.blueGlow),
+  (DashColors.green, DashColors.greenGlow),
+  (DashColors.accentYellow, DashColors.cardHover),
+  (DashColors.purple, DashColors.sidebarActiveStart),
+  (DashColors.red, DashColors.dangerOutlineBorder),
 ];
 
-const dashboardInitialActivities = [
-  DashboardActivity(
-    'Juan Pérez',
-    'Completó entrenamiento',
-    'Hoy, 10:30 AM',
-    'JP',
-    Color(0xFF1E3A8A),
-  ),
-  DashboardActivity(
-    'María González',
-    'Error técnico detectado',
-    'Hoy, 09:15 AM',
-    'MG',
-    Color(0xFF7F1D1D),
-  ),
-  DashboardActivity(
-    'Carlos Ramírez',
-    'Mejora en saque',
-    'Ayer, 07:45 PM',
-    'CR',
-    Color(0xFF1E40AF),
-  ),
-  DashboardActivity(
-    'Nueva sesión',
-    'Entrenamiento de defensa',
-    'Ayer, 06:30 PM',
-    '📹',
-    Color(0xFF312E81),
-    icon: true,
-  ),
-];
-
-const dashboardChartLabels = ['14 Abr', '21 Abr', '28 Abr', '5 May', '12 May'];
-
-const dashboardChartValues = [48.0, 55.0, 62.0, 68.0, 78.0];
-
-const dashboardDateOptions = [
-  '12 - 18 Mayo, 2025',
-  '5 - 11 Mayo, 2025',
-  '28 Abr - 4 Mayo, 2025',
-  'Abril 2025',
-  'Mayo 2025',
-];
-
-const dashboardSessionTypes = [
-  'Entrenamiento general',
-  'Entrenamiento de defensa',
-  'Entrenamiento de ataque',
-  'Entrenamiento de saque',
-  'Partido amistoso',
-  'Análisis táctico',
+/// Choices de `tipo_evento` del modal "Nueva Sesión" (`POST /api/panel/horarios`).
+const List<(String value, String label)> dashboardTipoEventoOptions = [
+  ('entrenamiento', 'Entrenamiento'),
+  ('partido', 'Partido'),
+  ('evaluacion', 'Evaluación'),
+  ('reunion', 'Reunión'),
+  ('otro', 'Otro'),
 ];
