@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/coach_link_data.dart';
+import '../models/my_level_data.dart';
 import '../models/my_matches_data.dart';
 import '../models/my_teams_data.dart';
 import '../models/routine_data.dart';
@@ -799,6 +800,18 @@ class ApiService {
       statusCode: 0,
       message: 'Respuesta inesperada al actualizar el ejercicio.',
     );
+  }
+
+  // ---------- Mi Nivel (Deportista) ----------
+
+  /// Obtiene el nivel actual, criterios de avance, revisiones e historial (`GET /api/ia/mi-nivel`).
+  Future<MyLevelResponse> miNivel() async {
+    final tzOffset = -DateTime.now().timeZoneOffset.inMinutes;
+    final data = await get('/ia/mi-nivel?tz=$tzOffset');
+    if (data is Map) {
+      return MyLevelResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const MyLevelResponse();
   }
 
   /// Convierte URL relativa `/media/...` en absoluta respecto al host del backend.
