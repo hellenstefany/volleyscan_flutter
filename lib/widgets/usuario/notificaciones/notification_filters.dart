@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/notification_data.dart';
-import '../../../theme/routine_colors.dart';
+import '../../../theme/dash_colors.dart';
 
 /// Chips horizontales para filtrar notificaciones.
 class NotificationFilters extends StatelessWidget {
@@ -22,7 +22,7 @@ class NotificationFilters extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final f = filters[i];
           final active = f.value == selected;
@@ -32,18 +32,19 @@ class NotificationFilters extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: active ? RoutineColors.blue : RoutineColors.cardDark,
+                color: active ? DashColors.blueLight : DashColors.surface,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: active ? RoutineColors.blue : RoutineColors.border,
+                  color: active ? DashColors.blueLight : DashColors.border,
                 ),
               ),
               child: Text(
                 f.label,
                 style: TextStyle(
-                  color: active ? Colors.white : RoutineColors.textMuted,
-                  fontSize: 14,
-                  fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                  fontFamily: 'Poppins',
+                  color: active ? DashColors.textPrimary : DashColors.muted,
+                  fontSize: 13.5,
+                  fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/notification_data.dart';
-import '../../../theme/routine_colors.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/dash_colors.dart';
 
 class RecommendationCard extends StatelessWidget {
   final Recommendation recommendation;
@@ -19,12 +20,12 @@ class RecommendationCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: RoutineColors.cardDark,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: RoutineColors.border),
+        color: DashColors.cardDark,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        border: Border.all(color: DashColors.border),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -36,7 +37,7 @@ class RecommendationCard extends StatelessWidget {
                 fit: BoxFit.cover,
                 loadingBuilder: (_, child, progress) =>
                     progress == null ? child : _placeholder(),
-                errorBuilder: (_, __, ___) => _placeholder(),
+                errorBuilder: (_, _, _) => _placeholder(),
               ),
             ),
             Padding(
@@ -47,8 +48,9 @@ class RecommendationCard extends StatelessWidget {
                   Text(
                     rec.title,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
+                      fontFamily: 'Poppins',
+                      color: DashColors.textPrimary,
+                      fontSize: 15.5,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -56,22 +58,24 @@ class RecommendationCard extends StatelessWidget {
                   Text(
                     rec.desc,
                     style: const TextStyle(
-                      color: Color(0xFFCBD5E1),
-                      fontSize: 13.5,
+                      fontFamily: 'Poppins',
+                      color: DashColors.textSecondary,
+                      fontSize: 13,
                     ),
                   ),
                   const SizedBox(height: 10),
                   GestureDetector(
                     onTap: onTap,
                     behavior: HitTestBehavior.opaque,
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Text(
                           'Ver ejercicios',
                           style: TextStyle(
-                            color: Color(0xFF3B82F6),
-                            fontSize: 14,
+                            fontFamily: 'Poppins',
+                            color: DashColors.blueLight,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -79,7 +83,7 @@ class RecommendationCard extends StatelessWidget {
                         Icon(
                           Icons.arrow_forward_rounded,
                           size: 16,
-                          color: Color(0xFF3B82F6),
+                          color: DashColors.blueLight,
                         ),
                       ],
                     ),
@@ -94,12 +98,12 @@ class RecommendationCard extends StatelessWidget {
   }
 
   Widget _placeholder() => Container(
-    color: RoutineColors.trackGrey,
-    alignment: Alignment.center,
-    child: const Icon(
-      Icons.image_outlined,
-      color: RoutineColors.textMuted,
-      size: 32,
-    ),
-  );
+        color: DashColors.surface,
+        alignment: Alignment.center,
+        child: const Icon(
+          Icons.image_outlined,
+          color: DashColors.muted,
+          size: 32,
+        ),
+      );
 }

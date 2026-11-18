@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 import '../../../models/notification_data.dart';
-import '../../../theme/routine_colors.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/dash_colors.dart';
 
 Color notificationColor(NotificationType t) {
   switch (t) {
     case NotificationType.logro:
-      return const Color(0xFF22C55E);
+      return DashColors.green;
     case NotificationType.rutina:
-      return const Color(0xFFA855F7);
+      return DashColors.purple;
     case NotificationType.racha:
-      return const Color(0xFFF97316);
+      return DashColors.orange;
     case NotificationType.recordatorio:
-      return const Color(0xFF3B82F6);
+    case NotificationType.vinculo:
+      return DashColors.blueLight;
     case NotificationType.analisis:
-      return const Color(0xFFEAB308);
+      return DashColors.accentYellow;
+    case NotificationType.equipo:
+      return DashColors.cyan;
+    case NotificationType.otro:
+      return DashColors.accent2;
   }
 }
 
@@ -29,12 +35,19 @@ IconData notificationIcon(NotificationType t) {
       return Icons.lock_rounded;
     case NotificationType.analisis:
       return Icons.bolt_rounded;
+    case NotificationType.vinculo:
+      return Icons.how_to_reg_rounded;
+    case NotificationType.equipo:
+      return Icons.groups_rounded;
+    case NotificationType.otro:
+      return Icons.notifications_rounded;
   }
 }
 
 class NotificationItem extends StatelessWidget {
   final AppNotification notification;
   final bool dismissing;
+  final bool busy;
   final VoidCallback onTap;
   final VoidCallback onMarkRead;
   final VoidCallback onDelete;
@@ -43,6 +56,7 @@ class NotificationItem extends StatelessWidget {
     super.key,
     required this.notification,
     required this.dismissing,
+    this.busy = false,
     required this.onTap,
     required this.onMarkRead,
     required this.onDelete,
@@ -57,26 +71,24 @@ class NotificationItem extends StatelessWidget {
       offset: dismissing ? const Offset(0.12, 0) : Offset.zero,
       duration: const Duration(milliseconds: 300),
       child: AnimatedOpacity(
-        opacity: dismissing ? 0 : 1,
+        opacity: dismissing ? 0 : (n.unread ? 1.0 : 0.78),
         duration: const Duration(milliseconds: 300),
         child: Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: 10),
           child: GestureDetector(
-            onTap: n.unread ? onTap : null,
+            onTap: busy ? null : onTap,
             child: Container(
               decoration: BoxDecoration(
-                color: n.unread
-                    ? const Color(0xFF1A2240)
-                    : RoutineColors.cardDark,
-                borderRadius: BorderRadius.circular(16),
+                color: n.unread ? DashColors.surface : DashColors.cardDark,
+                borderRadius: BorderRadius.circular(AppRadii.md),
                 border: Border.all(
                   color: n.unread
-                      ? RoutineColors.blue.withOpacity(0.25)
-                      : RoutineColors.border,
+                      ? DashColors.blueLight.withValues(alpha: 0.25)
+                      : DashColors.border,
                 ),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppRadii.md),
                 child: Stack(
                   children: [
                     Padding(
@@ -85,16 +97,16 @@ class NotificationItem extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            width: 48,
-                            height: 48,
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              color: color.withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(12),
+                              color: color.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(AppRadii.btn),
                             ),
                             child: Icon(
                               notificationIcon(n.type),
                               color: color,
-                              size: 24,
+                              size: 22,
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -105,8 +117,9 @@ class NotificationItem extends StatelessWidget {
                                 Text(
                                   n.title,
                                   style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 15,
+                                    fontFamily: 'Poppins',
+                                    color: DashColors.textPrimary,
+                                    fontSize: 14.5,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -114,9 +127,10 @@ class NotificationItem extends StatelessWidget {
                                 Text(
                                   n.msg,
                                   style: const TextStyle(
-                                    color: Color(0xFFCBD5E1),
-                                    fontSize: 13.5,
-                                    height: 1.3,
+                                    fontFamily: 'Poppins',
+                                    color: DashColors.textSecondary,
+                                    fontSize: 13,
+                                    height: 1.35,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -125,14 +139,15 @@ class NotificationItem extends StatelessWidget {
                                     const Icon(
                                       Icons.access_time_filled,
                                       size: 13,
-                                      color: RoutineColors.textMuted,
+                                      color: DashColors.muted,
                                     ),
                                     const SizedBox(width: 5),
                                     Text(
                                       n.time,
                                       style: const TextStyle(
-                                        color: RoutineColors.textMuted,
-                                        fontSize: 12,
+                                        fontFamily: 'Poppins',
+                                        color: DashColors.muted,
+                                        fontSize: 11.5,
                                       ),
                                     ),
                                   ],
@@ -149,7 +164,7 @@ class NotificationItem extends StatelessWidget {
                                     _iconBtn(
                                       Icons.check_rounded,
                                       'Marcar como leída',
-                                      onMarkRead,
+                                      busy ? null : onMarkRead,
                                     ),
                                     Positioned(
                                       top: 4,
@@ -158,7 +173,7 @@ class NotificationItem extends StatelessWidget {
                                         width: 8,
                                         height: 8,
                                         decoration: const BoxDecoration(
-                                          color: RoutineColors.blue,
+                                          color: DashColors.blueLight,
                                           shape: BoxShape.circle,
                                         ),
                                       ),
@@ -168,7 +183,7 @@ class NotificationItem extends StatelessWidget {
                               _iconBtn(
                                 Icons.close_rounded,
                                 'Eliminar',
-                                onDelete,
+                                busy ? null : onDelete,
                               ),
                             ],
                           ),
@@ -181,7 +196,7 @@ class NotificationItem extends StatelessWidget {
                         top: 0,
                         bottom: 0,
                         width: 3,
-                        child: ColoredBox(color: RoutineColors.blue),
+                        child: ColoredBox(color: DashColors.blueLight),
                       ),
                   ],
                 ),
@@ -193,11 +208,15 @@ class NotificationItem extends StatelessWidget {
     );
   }
 
-  Widget _iconBtn(IconData icon, String tooltip, VoidCallback onPressed) {
+  Widget _iconBtn(IconData icon, String tooltip, VoidCallback? onPressed) {
     return IconButton(
       onPressed: onPressed,
       tooltip: tooltip,
-      icon: Icon(icon, size: 18, color: Colors.white.withOpacity(0.55)),
+      icon: Icon(
+        icon,
+        size: 18,
+        color: DashColors.textPrimary.withValues(alpha: 0.55),
+      ),
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
     );
