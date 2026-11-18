@@ -2,20 +2,22 @@ import 'package:flutter/material.dart';
 
 import 'dashboard_theme.dart';
 
-/// Gráfica de rendimiento (línea suave con área).
+/// Gráfica de efectividad en últimos partidos (% de sets ganados).
 class DashboardPerformancePainter extends CustomPainter {
   final List<String> labels;
   final List<double> values;
 
-  static const padL = 40.0, padR = 12.0, padT = 12.0, padB = 28.0;
+  static const padL = 40.0, padR = 16.0, padT = 12.0, padB = 28.0;
 
   DashboardPerformancePainter(this.labels, this.values);
 
   Offset _point(int i, Size s) {
     final cW = s.width - padL - padR;
     final cH = s.height - padT - padB;
-    final x = padL + (i / (values.length - 1)) * cW;
-    final y = padT + cH - (values[i] / 100) * cH; // eje Y fijo 0..100
+    final x = values.length <= 1
+        ? padL + cW / 2
+        : padL + (i / (values.length - 1)) * cW;
+    final y = padT + cH - (values[i].clamp(0, 100) / 100) * cH;
     return Offset(x, y);
   }
 
@@ -29,7 +31,9 @@ class DashboardPerformancePainter extends CustomPainter {
         ),
       ),
       textDirection: TextDirection.ltr,
-    )..layout();
+      maxLines: 1,
+      ellipsis: '…',
+    )..layout(maxWidth: 120);
 
     double dx = pos.dx;
     if (align == TextAlign.right) dx -= tp.width;
@@ -41,9 +45,9 @@ class DashboardPerformancePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final cH = size.height - padT - padB;
 
-    // Rejilla + etiquetas Y (0, 25, 50, 75, 100)
+    // Rejilla + etiquetas Y (0%, 25%, 50%, 75%, 100%)
     final grid = Paint()
-      ..color = Colors.white.withOpacity(0.04)
+      ..color = DashboardTheme.border
       ..strokeWidth = 1;
 
     for (final v in [0, 25, 50, 75, 100]) {
@@ -52,8 +56,10 @@ class DashboardPerformancePainter extends CustomPainter {
       _drawText(canvas, '$v%', Offset(padL - 8, y), TextAlign.right);
     }
 
+    if (values.isEmpty) return;
+
     // Etiquetas X
-    for (var i = 0; i < labels.length; i++) {
+    for (var i = 0; i < labels.length && i < values.length; i++) {
       _drawText(
         canvas,
         labels[i],
@@ -62,59 +68,61 @@ class DashboardPerformancePainter extends CustomPainter {
       );
     }
 
-    // Curva suave (Catmull-Rom → Bézier)
     final pts = [for (var i = 0; i < values.length; i++) _point(i, size)];
-    final line = Path()..moveTo(pts.first.dx, pts.first.dy);
 
-    for (var i = 0; i < pts.length - 1; i++) {
-      final p0 = i > 0 ? pts[i - 1] : pts[i];
-      final p1 = pts[i];
-      final p2 = pts[i + 1];
-      final p3 = i + 2 < pts.length ? pts[i + 2] : p2;
+    if (pts.length >= 2) {
+      final line = Path()..moveTo(pts.first.dx, pts.first.dy);
 
-      const k = 0.45 / 3; // equivale a tension 0.45
+      for (var i = 0; i < pts.length - 1; i++) {
+        final p0 = i > 0 ? pts[i - 1] : pts[i];
+        final p1 = pts[i];
+        final p2 = pts[i + 1];
+        final p3 = i + 2 < pts.length ? pts[i + 2] : p2;
 
-      final c1 = Offset(
-        p1.dx + (p2.dx - p0.dx) * k * 1.5,
-        p1.dy + (p2.dy - p0.dy) * k * 1.5,
+        const k = 0.45 / 3; // tension 0.45 de Chart.js en page.jsx
+
+        final c1 = Offset(
+          p1.dx + (p2.dx - p0.dx) * k * 1.5,
+          p1.dy + (p2.dy - p0.dy) * k * 1.5,
+        );
+        final c2 = Offset(
+          p2.dx - (p3.dx - p1.dx) * k * 1.5,
+          p2.dy - (p3.dy - p1.dy) * k * 1.5,
+        );
+
+        line.cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, p2.dx, p2.dy);
+      }
+
+      // Área degradada
+      final area = Path.from(line)
+        ..lineTo(pts.last.dx, padT + cH)
+        ..lineTo(pts.first.dx, padT + cH)
+        ..close();
+
+      canvas.drawPath(
+        area,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              DashboardTheme.blue.withValues(alpha: 0.35),
+              DashboardTheme.blue.withValues(alpha: 0.01),
+            ],
+          ).createShader(Rect.fromLTWH(0, padT, size.width, cH)),
       );
-      final c2 = Offset(
-        p2.dx - (p3.dx - p1.dx) * k * 1.5,
-        p2.dy - (p3.dy - p1.dy) * k * 1.5,
-      );
 
-      line.cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, p2.dx, p2.dy);
+      // Línea
+      canvas.drawPath(
+        line,
+        Paint()
+          ..color = DashboardTheme.blue
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
     }
-
-    // Área degradada
-    final area = Path.from(line)
-      ..lineTo(pts.last.dx, padT + cH)
-      ..lineTo(pts.first.dx, padT + cH)
-      ..close();
-
-    canvas.drawPath(
-      area,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            DashboardTheme.blue.withOpacity(0.35),
-            DashboardTheme.blue.withOpacity(0.01),
-          ],
-        ).createShader(Rect.fromLTWH(0, padT, size.width, cH)),
-    );
-
-    // Línea
-    canvas.drawPath(
-      line,
-      Paint()
-        ..color = DashboardTheme.blue
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
 
     // Puntos
     for (final p in pts) {
@@ -130,21 +138,22 @@ class DashboardPerformancePainter extends CustomPainter {
     }
   }
 
-  /// Devuelve el texto del punto más cercano al toque (o null).
+  /// Devuelve el tooltip del punto más cercano al toque (`"<rival>: <pct>% sets ganados"`).
   String? findPoint(Offset pos, Size size) {
-    double best = 22;
+    double best = 24;
     String? result;
 
-    for (var i = 0; i < values.length; i++) {
+    for (var i = 0; i < values.length && i < labels.length; i++) {
       final d = (_point(i, size) - pos).distance;
       if (d < best) {
         best = d;
-        result = '${labels[i]}: ${values[i].round()}%';
+        result = '${labels[i]}: ${values[i].round()}% sets ganados';
       }
     }
     return result;
   }
 
   @override
-  bool shouldRepaint(covariant DashboardPerformancePainter old) => false;
+  bool shouldRepaint(covariant DashboardPerformancePainter old) =>
+      old.labels != labels || old.values != values;
 }

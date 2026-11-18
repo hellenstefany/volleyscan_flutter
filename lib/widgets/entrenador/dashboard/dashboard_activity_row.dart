@@ -5,27 +5,31 @@ import 'dashboard_models.dart';
 import 'dashboard_theme.dart';
 
 class DashboardActivityRow extends StatelessWidget {
-  final DashboardActivity activity;
+  final EntrenadorEventoProximo evento;
 
-  const DashboardActivityRow({super.key, required this.activity});
+  const DashboardActivityRow({super.key, required this.evento});
 
   @override
   Widget build(BuildContext context) {
+    final sub = (evento.ubicacion != null && evento.ubicacion!.isNotEmpty)
+        ? '${evento.tipoEvento} • ${evento.ubicacion}'
+        : evento.tipoEvento;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        hoverColor: Colors.white.withOpacity(0.04),
+        hoverColor: DashboardTheme.border,
         onTap: () {},
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Row(
             children: [
-              DashboardAvatar(
-                text: activity.initials,
-                bg: activity.bg,
+              const DashboardAvatar(
+                text: '📅',
+                bg: DashboardTheme.bgCardHover,
                 size: 36,
-                fontSize: activity.icon ? 18 : 13,
+                fontSize: 18,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -33,7 +37,7 @@ class DashboardActivityRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      activity.name,
+                      evento.titulo,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 13,
@@ -43,7 +47,7 @@ class DashboardActivityRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      activity.action,
+                      sub,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 11,
@@ -55,7 +59,7 @@ class DashboardActivityRow extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                activity.time,
+                '${evento.fecha} (${evento.horaInicioCorta})',
                 style: const TextStyle(
                   fontSize: 11,
                   color: DashboardTheme.textMuted,

@@ -6,23 +6,29 @@ import 'dashboard_theme.dart';
 
 class DashboardPlayerRow extends StatelessWidget {
   final int rank;
-  final DashboardPlayerData player;
+  final EntrenadorUltimoPartido partido;
+  final Color color;
+  final Color bg;
   final VoidCallback onTap;
 
   const DashboardPlayerRow({
     super.key,
     required this.rank,
-    required this.player,
+    required this.partido,
+    required this.color,
+    required this.bg,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final pct = partido.porcentajeSets;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        hoverColor: Colors.white.withOpacity(0.04),
+        hoverColor: DashboardTheme.border,
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -42,15 +48,15 @@ class DashboardPlayerRow extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               DashboardAvatar(
-                text: player.initials,
-                bg: player.bg,
+                text: partido.iniciales,
+                bg: bg,
                 size: 32,
                 fontSize: 13,
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  player.name,
+                  'vs ${partido.rival} (${partido.setsGanados}-${partido.setsPerdidos})',
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 13,
@@ -65,15 +71,15 @@ class DashboardPlayerRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
                     height: 5,
-                    color: Colors.white.withOpacity(0.08),
+                    color: DashboardTheme.border,
                     alignment: Alignment.centerLeft,
                     child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0, end: player.pct / 100),
-                      duration: const Duration(seconds: 1),
+                      tween: Tween(begin: 0, end: (pct.clamp(0, 100)) / 100),
+                      duration: const Duration(milliseconds: 800),
                       curve: Curves.easeOut,
-                      builder: (_, v, __) => FractionallySizedBox(
+                      builder: (_, v, _) => FractionallySizedBox(
                         widthFactor: v,
-                        child: Container(color: player.color),
+                        child: Container(color: color),
                       ),
                     ),
                   ),
@@ -83,12 +89,12 @@ class DashboardPlayerRow extends StatelessWidget {
               SizedBox(
                 width: 38,
                 child: Text(
-                  '${player.pct}%',
+                  '$pct%',
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: player.color,
+                    color: color,
                   ),
                 ),
               ),
