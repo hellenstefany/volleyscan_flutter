@@ -1,34 +1,23 @@
 import 'package:flutter/material.dart';
 
-/// Colores (de tu :root en Gestion.css)
-class GC {
-  static const bg = Color(0xFF080C18);
-  static const card = Color(0xFF0E1525);
-  static const card2 = Color(0xFF121D30);
-  static const hover = Color(0xFF1A2540);
-  static const border = Color(0x0FFFFFFF); // .06
-  static const accent = Color(0xFF3B82F6);
-  static const accent2 = Color(0xFF60A5FA);
-  static const indigo = Color(0xFF818CF8);
-  static const red = Color(0xFFEF4444);
-  static const redSoft = Color(0xFFF87171);
-  static const purple = Color(0xFF6D28D9);
-  static const purple2 = Color(0xFF8B5CF6);
-  static const green = Color(0xFF10B981);
-  static const mint = Color(0xFF22D3A5);
-  static const t1 = Color(0xFFEEF4FF);
-  static const t2 = Color(0xFF7A90B8);
-  static const t3 = Color(0xFF374A6E);
-}
+import '../../../theme/dash_colors.dart';
 
-const avatarColors = [
-  Color(0xFF3B82F6),
-  Color(0xFF7C3AED),
-  Color(0xFF06B6D4),
-  Color(0xFFF59E0B),
-  Color(0xFF22D3A5),
-  Color(0xFFF43F5E),
-  Color(0xFF8B5CF6),
-  Color(0xFF10B981),
-];
-Color colorFor(int id) => avatarColors[(id - 1) % avatarColors.length];
+/// Tokens de estilo de `deportistas.module.css` mapeados a `DashColors`
+/// (sin definir colores nuevos).
+abstract final class GestionColors {
+  static const Color bg = DashColors.bg; // #0b0f1a
+  static const Color card = DashColors.cardDark; // #111827
+  static const Color card2 = DashColors.coachCard2; // #0e1422
+  static const Color border = DashColors.coachBorder; // #1f2634
+  static const Color blue = DashColors.blueLight; // #3b82f6
+  static const Color blueLight = DashColors.accent2; // #60a5fa
+  static const Color green = DashColors.green; // #22c55e
+  static const Color orange = DashColors.orange; // #f97316
+  static const Color text = DashColors.text1; // #f1f5f9
+  static const Color text2 = DashColors.textSecondary; // #cbd5e1
+  static const Color muted = DashColors.textMuted; // #94a3b8
+  static const Color faint = DashColors.text3; // #475569
+  static const Color ringBg = DashColors.card; // #1a2235
+  static const Color warningText = DashColors.warningText; // #fdba74
+  static const Color successText = DashColors.successBadgeText; // #86efac
+}

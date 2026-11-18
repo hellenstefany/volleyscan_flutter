@@ -1,200 +1,274 @@
 import 'package:flutter/material.dart';
+
+import '../../../theme/app_theme.dart';
 import 'gestion_athlete.dart';
 import 'gestion_colors.dart';
-import 'gestion_athletes_toolbar.dart';
 import 'gestion_common_widgets.dart';
 
-/// Panel completo: toolbar + tabla + estado vacío.
-class AthletesPanel extends StatelessWidget {
-  final List<Athlete> athletes;
-  final int? selectedId;
-  final bool narrow;
-  final String cat, estado;
-  final ValueChanged<String> onSearch, onCat, onEstado;
-  final ValueChanged<Athlete> onSelect, onEdit, onDelete;
-  final VoidCallback onAdd;
+/// Tarjeta individual de un deportista (`.card` en `page.jsx` / `deportistas.module.css`).
+class DeportistaCard extends StatelessWidget {
+  final EntrenadorDeportista atleta;
+  final bool confirmandoRetiro;
+  final bool busy;
+  final VoidCallback onVerAnalisis;
+  final VoidCallback onPedirRetirar;
+  final VoidCallback onCancelarRetiro;
+  final VoidCallback onConfirmarRetiro;
 
-  const AthletesPanel({
+  const DeportistaCard({
     super.key,
-    required this.athletes,
-    required this.selectedId,
-    required this.narrow,
-    required this.cat,
-    required this.estado,
-    required this.onSearch,
-    required this.onCat,
-    required this.onEstado,
-    required this.onSelect,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onAdd,
+    required this.atleta,
+    required this.confirmandoRetiro,
+    required this.busy,
+    required this.onVerAnalisis,
+    required this.onPedirRetirar,
+    required this.onCancelarRetiro,
+    required this.onConfirmarRetiro,
   });
 
   @override
   Widget build(BuildContext context) {
-    final pad = narrow ? 12.0 : 18.0;
+    final ia = atleta.ia;
+    final sinRevisar = ia?.sinRevisar ?? 0;
+    final verLabel = sinRevisar > 0
+        ? 'Ver análisis · $sinRevisar sin revisar'
+        : 'Ver análisis';
+
     return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: boxDeco(GC.card2, 18),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: AppGradients.coachCardBg,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: GestionColors.border),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AthletesToolbar(
-            narrow: narrow,
-            cat: cat,
-            estado: estado,
-            onSearch: onSearch,
-            onCat: onCat,
-            onEstado: onEstado,
-            onAdd: onAdd,
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: pad),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: narrow ? 620 : 560),
-              child: _table(),
-            ),
-          ),
-          if (athletes.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 32),
-              child: Center(
-                child: Text(
-                  'No se encontraron deportistas.',
-                  style: TextStyle(fontSize: 13, color: GC.t3),
-                ),
-              ),
-            ),
-          const SizedBox(height: 18),
-        ],
-      ),
-    );
-  }
-
-  Widget _table() {
-    const head = TextStyle(
-      fontSize: 11.5,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0.6,
-      color: GC.t2,
-    );
-    Widget th(String t) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: Text(t.toUpperCase(), style: head),
-    );
-
-    return Table(
-      columnWidths: const {
-        0: FixedColumnWidth(70),
-        1: FlexColumnWidth(2.2),
-        2: FixedColumnWidth(60),
-        3: FlexColumnWidth(1.3),
-        4: FlexColumnWidth(1.4),
-        5: FlexColumnWidth(1.3),
-        6: FixedColumnWidth(122),
-      },
-      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-      children: [
-        TableRow(
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: GC.border)),
-          ),
-          children: [
-            for (final t in [
-              'Foto',
-              'Nombre',
-              'Edad',
-              'Categoría',
-              'Nivel',
-              'Estado',
-              'Acciones',
-            ])
-              th(t),
-          ],
-        ),
-        for (final a in athletes) _row(a),
-      ],
-    );
-  }
-
-  TableRow _row(Athlete a) {
-    Widget cell(Widget child) => InkWell(
-      onTap: () => onSelect(a),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-        child: child,
-      ),
-    );
-    Widget txt(String t) =>
-        Text(t, style: const TextStyle(fontSize: 13, color: GC.t1));
-    final active = a.estado == 'Activo';
-
-    return TableRow(
-      decoration: BoxDecoration(
-        color: selectedId == a.id ? GC.accent.withValues(alpha: 0.1) : null,
-        border: const Border(bottom: BorderSide(color: GC.border)),
-      ),
-      children: [
-        cell(
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Avatar(id: a.id, name: a.nombre, size: 34, font: 12),
-          ),
-        ),
-        cell(txt(a.nombre)),
-        cell(txt('${a.edad}')),
-        cell(txt(a.cat)),
-        cell(txt(a.nivel)),
-        cell(
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-              decoration: BoxDecoration(
-                color: (active ? GC.mint : GC.redSoft).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(99),
-              ),
-              child: Text(
-                a.estado,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.4,
-                  color: active ? GC.green : GC.red,
-                ),
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-          child: Row(
+          // ── .cardHead ──
+          Row(
             children: [
-              ActionBtn(
-                icon: Icons.visibility_outlined,
-                bg: GC.accent.withValues(alpha: 0.12),
-                fg: GC.accent2,
-                onTap: () => onSelect(a),
-              ),
-              const SizedBox(width: 8),
-              ActionBtn(
-                icon: Icons.edit_outlined,
-                bg: const Color(0xFF94A3B8).withValues(alpha: 0.1),
-                fg: GC.t2,
-                onTap: () => onEdit(a),
-              ),
-              const SizedBox(width: 8),
-              ActionBtn(
-                icon: Icons.delete_outline,
-                bg: GC.redSoft.withValues(alpha: 0.1),
-                fg: GC.red,
-                onTap: () => onDelete(a),
+              DeportistaAvatar(atleta: atleta, size: 60),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      atleta.nombreCompleto,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 17.2,
+                        fontWeight: FontWeight.w700,
+                        color: GestionColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      atleta.email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13.4,
+                        color: GestionColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 12),
+          // ── <Chips a={a} /> ──
+          DeportistaChips(atleta: atleta),
+          const SizedBox(height: 12),
+          // ── <Perfil a={a} /> ──
+          DeportistaPerfilGrid(atleta: atleta),
+          const SizedBox(height: 12),
+          // ── .ia ──
+          Container(
+            constraints: const BoxConstraints(minHeight: 66),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: GestionColors.card2,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: GestionColors.border),
+            ),
+            child: ia != null
+                ? Row(
+                    children: [
+                      DeportistaScoreRing(
+                        valor: ia.promedio,
+                        size: 48,
+                        sinDato: ia.promedio == null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'Práctica con IA',
+                              style: TextStyle(
+                                fontSize: 14.4,
+                                fontWeight: FontWeight.w700,
+                                color: GestionColors.text,
+                              ),
+                            ),
+                            Text(
+                              '${ia.sesiones} ${ia.sesiones == 1 ? 'sesión' : 'sesiones'}'
+                              '${(ia.mejor != null && ia.promedio != null) ? ' · mejor ${ia.mejor}' : ''}',
+                              style: const TextStyle(
+                                fontSize: 13.2,
+                                color: GestionColors.muted,
+                              ),
+                            ),
+                            Text(
+                              'Última: ${formatFechaCortaDeportista(ia.ultimaSesion)}',
+                              style: const TextStyle(
+                                fontSize: 13.2,
+                                color: GestionColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Aún no ha practicado con la IA.',
+                      style: TextStyle(
+                        fontSize: 13.4,
+                        color: GestionColors.muted,
+                      ),
+                    ),
+                  ),
+          ),
+          const SizedBox(height: 12),
+          // ── Botón "Ver análisis" ──
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: onVerAnalisis,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                gradient: AppGradients.coachPrimaryBtn,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                verLabel,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // ── .cardPie ──
+          Container(
+            padding: const EdgeInsets.only(top: 10),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: GestionColors.border)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Contigo desde ${formatFechaCortaDeportista(atleta.desde)}',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13.2,
+                      color: GestionColors.muted,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (confirmandoRetiro)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        '¿Retirar?',
+                        style: TextStyle(
+                          fontSize: 13.2,
+                          color: GestionColors.text2,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Opacity(
+                        opacity: busy ? 0.5 : 1,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: busy ? null : onConfirmarRetiro,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: GestionColors.orange,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              'Sí',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: GestionColors.bg,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: busy ? null : onCancelarRetiro,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: GestionColors.card,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: GestionColors.border),
+                          ),
+                          child: const Text(
+                            'No',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: GestionColors.text2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  InkWell(
+                    onTap: onPedirRetirar,
+                    child: const Text(
+                      'Retirar',
+                      style: TextStyle(
+                        fontSize: 13.2,
+                        color: GestionColors.muted,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

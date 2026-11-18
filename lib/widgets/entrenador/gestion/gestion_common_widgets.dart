@@ -1,213 +1,353 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
+import '../../../services/api_service.dart';
+import '../../../theme/app_theme.dart';
 import 'gestion_athlete.dart';
 import 'gestion_colors.dart';
 
-BoxDecoration boxDeco(Color c, double r) => BoxDecoration(
-  color: c,
-  borderRadius: BorderRadius.circular(r),
-  border: Border.all(color: GC.border),
-);
-
-OutlineInputBorder outline(Color c, [double r = 10]) => OutlineInputBorder(
-  borderRadius: BorderRadius.circular(r),
-  borderSide: BorderSide(color: c),
-);
-
-class Avatar extends StatelessWidget {
-  final int id;
-  final String name;
-  final double size, font;
-  const Avatar({
-    super.key,
-    required this.id,
-    required this.name,
-    required this.size,
-    required this.font,
-  });
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(shape: BoxShape.circle, color: colorFor(id)),
-    child: Text(
-      initials(name),
-      style: TextStyle(
-        fontSize: font,
-        fontWeight: FontWeight.w700,
-        color: Colors.white,
-      ),
-    ),
-  );
+Color colorNotaDeportista(int? valor) {
+  final n = valor ?? 0;
+  if (n >= 80) return GestionColors.green;
+  if (n >= 60) return GestionColors.blue;
+  return GestionColors.orange;
 }
 
-class ActionBtn extends StatelessWidget {
-  final IconData icon;
-  final Color bg, fg;
-  final VoidCallback onTap;
-  const ActionBtn({
+/// Avatar cuadrado con bordes redondeados (`.avatar` / `.avatarIni` en `deportistas.module.css`).
+class DeportistaAvatar extends StatelessWidget {
+  final EntrenadorDeportista atleta;
+  final double size;
+
+  const DeportistaAvatar({
     super.key,
-    required this.icon,
-    required this.bg,
-    required this.fg,
-    required this.onTap,
+    required this.atleta,
+    this.size = 56,
   });
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(8),
-    child: Container(
-      width: 30,
-      height: 30,
+  Widget build(BuildContext context) {
+    final resolved = ApiService.resolveMediaUrl(atleta.fotoUrl);
+    final fallback = Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        gradient: AppGradients.coachPrimaryBtn,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Text(
+        atleta.iniciales,
+        style: TextStyle(
+          fontSize: size * 0.36,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+        ),
+      ),
+    );
+
+    if (resolved == null) return fallback;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Image.network(
+        resolved,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
+      ),
+    );
+  }
+}
+
+/// Anillo circular de puntaje (`.anillo` en `deportistas.module.css` y `HistorialIA.jsx`).
+class DeportistaScoreRing extends StatelessWidget {
+  final int? valor;
+  final double size;
+  final double strokeWidth;
+  final bool sinDato;
+
+  const DeportistaScoreRing({
+    super.key,
+    required this.valor,
+    this.size = 48,
+    this.strokeWidth = 5,
+    this.sinDato = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final noData = sinDato || valor == null;
+    final score = valor ?? 0;
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _RingPainter(
+          valor: score,
+          strokeWidth: strokeWidth,
+          sinDato: noData,
+          color: colorNotaDeportista(score),
+        ),
+        child: Center(
+          child: Text(
+            noData ? '—' : '$score',
+            style: TextStyle(
+              fontSize: size * 0.30,
+              fontWeight: FontWeight.w800,
+              color: noData ? GestionColors.faint : GestionColors.text,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  final int valor;
+  final double strokeWidth;
+  final bool sinDato;
+  final Color color;
+
+  const _RingPainter({
+    required this.valor,
+    required this.strokeWidth,
+    required this.sinDato,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    final trackPaint = Paint()
+      ..color = GestionColors.ringBg
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    canvas.drawCircle(center, radius, trackPaint);
+
+    if (!sinDato) {
+      final pct = (valor.clamp(0, 100)) / 100.0;
+      final fgPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2,
+        2 * math.pi * pct,
+        false,
+        fgPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _RingPainter old) =>
+      old.valor != valor || old.sinDato != sinDato || old.color != color;
+}
+
+/// Chips de posición y nivel (`<Chips a={a} />` en `page.jsx`).
+class DeportistaChips extends StatelessWidget {
+  final EntrenadorDeportista atleta;
+
+  const DeportistaChips({super.key, required this.atleta});
+
+  @override
+  Widget build(BuildContext context) {
+    final pos = atleta.posicion;
+    final niv = atleta.nivel;
+    if ((pos == null || pos.isEmpty) && (niv == null || niv.isEmpty)) {
+      return const SizedBox.shrink();
+    }
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        if (pos != null && pos.isNotEmpty)
+          _Chip(
+            label: kNombrePosicion[pos] ?? pos,
+            bg: GestionColors.blue.withValues(alpha: 0.16),
+            fg: GestionColors.blueLight,
+          ),
+        if (niv != null && niv.isNotEmpty)
+          _Chip(
+            label: kNombreNivel[niv] ?? niv,
+            bg: _nivelBg(niv),
+            fg: _nivelFg(niv),
+          ),
+      ],
+    );
+  }
+
+  Color _nivelBg(String n) {
+    switch (n) {
+      case 'intermedio':
+        return GestionColors.blue.withValues(alpha: 0.16);
+      case 'avanzado':
+        return GestionColors.green.withValues(alpha: 0.16);
+      case 'profesional':
+        return GestionColors.orange.withValues(alpha: 0.18);
+      default:
+        return GestionColors.muted.withValues(alpha: 0.16);
+    }
+  }
+
+  Color _nivelFg(String n) {
+    switch (n) {
+      case 'intermedio':
+        return GestionColors.blueLight;
+      case 'avanzado':
+        return GestionColors.successText;
+      case 'profesional':
+        return GestionColors.warningText;
+      default:
+        return GestionColors.text2;
+    }
+  }
+}
+
+class _Chip extends StatelessWidget {
+  final String label;
+  final Color bg;
+  final Color fg;
+
+  const _Chip({required this.label, required this.bg, required this.fg});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(99),
       ),
-      child: Icon(icon, size: 15, color: fg),
-    ),
-  );
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11.8,
+          fontWeight: FontWeight.w600,
+          color: fg,
+        ),
+      ),
+    );
+  }
 }
 
-class StatLine extends StatelessWidget {
-  final String k, v;
-  final bool last;
-  const StatLine(this.k, this.v, {super.key, this.last = false});
+/// Bloque de Edad / Peso / Estatura (`<Perfil a={a} />` en `page.jsx`).
+class DeportistaPerfilGrid extends StatelessWidget {
+  final EntrenadorDeportista atleta;
+
+  const DeportistaPerfilGrid({super.key, required this.atleta});
+
+  String _fmtNum(double? v, String suffix) {
+    if (v == null) return '—';
+    final text = (v == v.roundToDouble())
+        ? v.toInt().toString()
+        : v.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+    return '$text $suffix';
+  }
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(vertical: 9),
-    decoration: BoxDecoration(
-      border: last ? null : const Border(bottom: BorderSide(color: GC.border)),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget build(BuildContext context) {
+    final edadStr = atleta.edad != null ? '${atleta.edad} años' : '—';
+    final pesoStr = _fmtNum(atleta.pesoKg, 'kg');
+    final estStr = _fmtNum(atleta.estaturaM, 'm');
+
+    return Row(
       children: [
-        Text(k, style: const TextStyle(fontSize: 12.5, color: GC.t2)),
-        Text(
-          v,
-          style: const TextStyle(
-            fontFamily: 'monospace',
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: GC.t1,
-          ),
-        ),
+        Expanded(child: _DatoBox(label: 'EDAD', value: edadStr)),
+        const SizedBox(width: 8),
+        Expanded(child: _DatoBox(label: 'PESO', value: pesoStr)),
+        const SizedBox(width: 8),
+        Expanded(child: _DatoBox(label: 'ESTATURA', value: estStr)),
       ],
-    ),
-  );
+    );
+  }
 }
 
-class GhostButton extends StatelessWidget {
+class _DatoBox extends StatelessWidget {
   final String label;
-  final VoidCallback onTap;
-  const GhostButton({super.key, required this.label, required this.onTap});
+  final String value;
+
+  const _DatoBox({required this.label, required this.value});
 
   @override
-  Widget build(BuildContext context) => OutlinedButton(
-    onPressed: onTap,
-    style: OutlinedButton.styleFrom(
-      foregroundColor: GC.t2,
-      side: const BorderSide(color: GC.border),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-    ),
-    child: Text(label, style: const TextStyle(fontSize: 13)),
-  );
-}
-
-/// Botón con degradado (reemplaza los 3 botones repetidos).
-class GradientButton extends StatelessWidget {
-  final String label;
-  final IconData? icon;
-  final List<Color> colors;
-  final double radius;
-  final EdgeInsets padding;
-  final VoidCallback onTap;
-  const GradientButton({
-    super.key,
-    required this.label,
-    required this.onTap,
-    this.icon,
-    this.colors = const [GC.accent, GC.indigo],
-    this.radius = 9,
-    this.padding = const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-  });
-
-  @override
-  Widget build(BuildContext context) => Material(
-    color: Colors.transparent,
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(radius),
-      child: Ink(
-        padding: padding,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: colors,
-          ),
-          borderRadius: BorderRadius.circular(radius),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 15, color: Colors.white),
-              const SizedBox(width: 7),
-            ],
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: GestionColors.card2,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: GestionColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              letterSpacing: 0.8,
+              color: GestionColors.muted,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
+              color: GestionColors.text,
+            ),
+          ),
+        ],
       ),
-    ),
-  );
+    );
+  }
 }
 
-/// Select de filtro: '' = sin filtro (muestra el hint).
-class FilterSelect extends StatelessWidget {
-  final String hint, value;
-  final List<String> items;
-  final ValueChanged<String> onChanged;
-  const FilterSelect({
+/// Banner de alerta (`.alertaMal` y `.alertaBien` en `deportistas.module.css`).
+class DeportistaAlertBanner extends StatelessWidget {
+  final String text;
+  final bool isError;
+
+  const DeportistaAlertBanner({
     super.key,
-    required this.hint,
-    required this.value,
-    required this.items,
-    required this.onChanged,
+    required this.text,
+    this.isError = true,
   });
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-    decoration: BoxDecoration(
-      color: GC.hover,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: GC.border),
-    ),
-    child: DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        value: value,
-        isExpanded: true,
-        dropdownColor: GC.hover,
-        style: const TextStyle(color: GC.t2, fontSize: 13),
-        icon: const Icon(Icons.arrow_drop_down, color: GC.t2),
-        items: [
-          DropdownMenuItem(value: '', child: Text(hint)),
-          for (final i in items) DropdownMenuItem(value: i, child: Text(i)),
-        ],
-        onChanged: (v) => onChanged(v ?? ''),
+  Widget build(BuildContext context) {
+    final baseColor = isError ? GestionColors.orange : GestionColors.green;
+    final textColor =
+        isError ? GestionColors.warningText : GestionColors.successText;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: baseColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: baseColor.withValues(alpha: 0.40)),
       ),
-    ),
-  );
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13.5,
+          color: textColor,
+        ),
+      ),
+    );
+  }
 }
