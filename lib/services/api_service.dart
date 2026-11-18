@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import '../models/coach_link_data.dart';
 import '../models/my_matches_data.dart';
 import '../models/my_teams_data.dart';
+import '../models/routine_data.dart';
 import '../models/schedule_data.dart';
 import '../models/content_data.dart';
 import '../models/dashboard_data.dart';
@@ -751,6 +752,53 @@ class ApiService {
       return MyMatchesResponse.fromJson(Map<String, dynamic>.from(data));
     }
     return const MyMatchesResponse();
+  }
+
+  // ---------- Mis Rutinas (Deportista) ----------
+
+  /// Lista las rutinas asignadas al atleta (`GET /api/usuario/rutinas/`).
+  Future<List<RoutineSummary>> listarRutinas() async {
+    final data = await get('/usuario/rutinas/');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map(
+            (item) => RoutineSummary.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList();
+    }
+    return const <RoutineSummary>[];
+  }
+
+  /// Obtiene el detalle de una rutina con sus ejercicios (`GET /api/usuario/rutinas/<id>/`).
+  Future<RoutineDetail> detalleRutina(int rutinaId) async {
+    final data = await get('/usuario/rutinas/$rutinaId/');
+    if (data is Map) {
+      return RoutineDetail.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw ApiException(
+      statusCode: 0,
+      message: 'No se pudo leer el detalle de la rutina.',
+    );
+  }
+
+  /// Marca o desmarca un ejercicio como completado (`PUT /api/usuario/rutinas/<id>/ejercicios/<eid>/completar/`).
+  Future<ToggleExerciseResult> completarEjercicio({
+    required int rutinaId,
+    required int ejercicioId,
+    required bool completado,
+  }) async {
+    final data = await put(
+      '/usuario/rutinas/$rutinaId/ejercicios/$ejercicioId/completar/',
+      {'completado': completado},
+    );
+    if (data is Map) {
+      return ToggleExerciseResult.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw ApiException(
+      statusCode: 0,
+      message: 'Respuesta inesperada al actualizar el ejercicio.',
+    );
   }
 
   /// Convierte URL relativa `/media/...` en absoluta respecto al host del backend.
