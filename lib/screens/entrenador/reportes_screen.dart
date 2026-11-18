@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 // ───────── Colores (de tu :root) ─────────
 class _C {
-  static const bg = Color(0xFF0D0F1A);
   static const card = Color(0xFF0E1525);
   static const card2 = Color(0xFF121D30);
   static const hover = Color(0xFF1A2540);

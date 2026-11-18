@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 import '../models/notification_data.dart';
-import '../theme/routine_colors.dart';
+import '../services/api_service.dart';
+import '../theme/app_theme.dart';
+import '../theme/dash_colors.dart';
+import '../widgets/usuario/drawer/menu_button.dart';
+import '../widgets/usuario/entrenador/coach_directory_section.dart';
 import '../widgets/usuario/notificaciones/notification_filters.dart';
 import '../widgets/usuario/notificaciones/notification_item.dart';
 import '../widgets/usuario/notificaciones/recommendation_card.dart';
 import 'analysis_screen.dart';
+import 'coach_screen.dart';
+import 'history_screen.dart';
+import 'matches_screen.dart';
+import 'my_level_screen.dart';
+import 'progress_screen.dart';
 import 'routines_screen.dart';
-import '../widgets/usuario/drawer/menu_button.dart';
+import 'schedule_screen.dart';
+import 'teams_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -15,102 +25,250 @@ class NotificationsScreen extends StatefulWidget {
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
+enum _ScreenState { loading, error, ready }
+
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  // TODO: cargar las notificaciones reales del usuario.
-  List<AppNotification> _notifications = List.of(NotificationsData.initial);
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  _ScreenState _estado = _ScreenState.loading;
+  String _error = '';
+  List<AppNotification> _notifications = const <AppNotification>[];
   String _filter = 'all';
   Set<int> _dismissing = {};
+  bool _busy = false;
 
-  // ── Toast ──
-  void _toast(String message, {Color color = RoutineColors.blue}) {
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message, style: const TextStyle(color: Colors.white)),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: RoutineColors.card,
-          duration: const Duration(seconds: 3),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: color),
-          ),
-        ),
-      );
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
   }
 
-  // ── Filtrado ──
+  Future<void> _cargar({bool silent = false}) async {
+    if (!silent && mounted) {
+      setState(() {
+        _estado = _ScreenState.loading;
+        _error = '';
+      });
+    }
+    try {
+      final res = await ApiService().listarAvisos(limite: 100, todas: true);
+      if (!mounted) return;
+      setState(() {
+        _notifications = res.avisos;
+        _estado = _ScreenState.ready;
+        _error = '';
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        if (!silent) _estado = _ScreenState.error;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'No se pudieron cargar las notificaciones.';
+        if (!silent) _estado = _ScreenState.error;
+      });
+    }
+  }
+
   List<AppNotification> get _filtered {
     if (_filter == 'all') return _notifications;
     if (_filter == 'unread') {
       return _notifications.where((n) => n.unread).toList();
     }
-    return _notifications.where((n) => n.type.name == _filter).toList();
+    return _notifications.where((n) => n.rawType == _filter).toList();
   }
 
   int get _unreadCount => _notifications.where((n) => n.unread).length;
 
-  // ── Acciones ──
-  void _markAsRead(int id) {
-    final n = _notifications.firstWhere((n) => n.id == id);
-    if (!n.unread) return;
+  Future<void> _markAsRead(int id, {bool showToast = true}) async {
+    final idx = _notifications.indexWhere((n) => n.id == id);
+    if (idx < 0 || !_notifications[idx].unread || _busy) return;
+
+    final prev = _notifications;
     setState(() {
+      _busy = true;
       _notifications = _notifications
           .map((x) => x.id == id ? x.copyWith(unread: false) : x)
           .toList();
     });
-    _toast('Notificación marcada como leída.');
-    // TODO: avisar al backend.
+    try {
+      await ApiService().marcarAvisoLeida(id, todas: true);
+      if (mounted && showToast) {
+        showAppToast(context, 'Notificación marcada como leída.', type: 'info');
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _notifications = prev);
+        showAppToast(context, e.message, type: 'error');
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _notifications = prev);
+        showAppToast(
+          context,
+          'No se pudo marcar como leída.',
+          type: 'error',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
-  void _dismiss(int id) {
-    setState(() => _dismissing = {..._dismissing, id});
-    Future.delayed(const Duration(milliseconds: 320), () {
-      if (!mounted) return;
-      setState(() {
-        _notifications = _notifications.where((n) => n.id != id).toList();
-        _dismissing = _dismissing.where((d) => d != id).toSet();
-      });
-      // TODO: avisar al backend.
-    });
-  }
+  void _openNotification(AppNotification notif) {
+    if (notif.unread) _markAsRead(notif.id, showToast: false);
+    final link = notif.link;
+    if (link == null || link.isEmpty) return;
 
-  void _markAllRead() {
-    final count = _notifications.where((n) => n.unread).length;
-    if (count == 0) {
-      _toast('No hay notificaciones sin leer.');
+    final Widget? page = _resolveUserRoute(link);
+    if (page == null) {
+      showAppToast(context, 'Próximamente disponible', type: 'info');
       return;
     }
-    setState(() {
-      _notifications = _notifications
-          .map((n) => n.copyWith(unread: false))
-          .toList();
-    });
-    final plural = count > 1;
-    _toast(
-      '✓ $count notificación${plural ? 'es' : ''} '
-      'marcada${plural ? 's' : ''} como leída${plural ? 's' : ''}.',
-      color: const Color(0xFF22C55E),
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+
+  Widget? _resolveUserRoute(String link) {
+    if (link.startsWith('/usuario/rutinas')) return const RoutinesScreen();
+    if (link.startsWith('/usuario/analisis')) return const AnalysisScreen();
+    if (link.startsWith('/usuario/entrenador')) return const CoachScreen();
+    if (link.startsWith('/usuario/equipos')) return const TeamsScreen();
+    if (link.startsWith('/usuario/horario')) return const ScheduleScreen();
+    if (link.startsWith('/usuario/partidos')) return const MatchesScreen();
+    if (link.startsWith('/usuario/mi-nivel')) return const MyLevelScreen();
+    if (link.startsWith('/usuario/progreso')) return const ProgressScreen();
+    if (link.startsWith('/usuario/historial')) return const HistoryScreen();
+    return null;
+  }
+
+  Future<void> _dismiss(int id) async {
+    if (_busy) return;
+    final confirmed = await showCoachConfirmModal(
+      context,
+      title: '¿Eliminar notificación?',
+      message: 'Esta notificación se eliminará de tu lista.',
+      confirmLabel: 'Eliminar',
+      isDanger: true,
     );
-  }
+    if (!confirmed || !mounted) return;
 
-  void _clearAll() {
-    if (_notifications.isEmpty) {
-      _toast('No hay notificaciones que limpiar.');
+    setState(() => _busy = true);
+    try {
+      await ApiService().eliminarAviso(id);
+    } on ApiException catch (e) {
+      if (e.statusCode != 404) {
+        if (mounted) {
+          setState(() => _busy = false);
+          showAppToast(context, e.message, type: 'error');
+        }
+        return;
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _busy = false);
+        showAppToast(context, 'No se pudo eliminar.', type: 'error');
+      }
       return;
     }
-    setState(() => _dismissing = _notifications.map((n) => n.id).toSet());
-    Future.delayed(const Duration(milliseconds: 340), () {
-      if (!mounted) return;
-      setState(() {
-        _notifications = [];
-        _dismissing = {};
-      });
-      _toast(
-        'Todas las notificaciones eliminadas.',
-        color: const Color(0xFF22C55E),
-      );
+
+    if (!mounted) return;
+    setState(() => _dismissing = {..._dismissing, id});
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
+    setState(() {
+      _notifications = _notifications.where((n) => n.id != id).toList();
+      _dismissing = _dismissing.where((d) => d != id).toSet();
+      _busy = false;
     });
+  }
+
+  Future<void> _markAllRead() async {
+    if (_busy) return;
+    final count = _unreadCount;
+    if (count == 0) {
+      showAppToast(context, 'No hay notificaciones sin leer.', type: 'info');
+      return;
+    }
+
+    final prev = _notifications;
+    setState(() {
+      _busy = true;
+      _notifications =
+          _notifications.map((n) => n.copyWith(unread: false)).toList();
+    });
+    try {
+      await ApiService().marcarTodosLosAvisosLeidos(todas: true);
+      if (mounted) {
+        final plural = count > 1;
+        showAppToast(
+          context,
+          '✓ $count notificación${plural ? 'es' : ''} marcada${plural ? 's' : ''} como leída${plural ? 's' : ''}.',
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _notifications = prev);
+        showAppToast(context, e.message, type: 'error');
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _notifications = prev);
+        showAppToast(
+          context,
+          'No se pudieron marcar como leídas.',
+          type: 'error',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _clearAll() async {
+    if (_busy) return;
+    if (_notifications.isEmpty) {
+      showAppToast(context, 'No hay notificaciones que limpiar.', type: 'info');
+      return;
+    }
+    final confirmed = await showCoachConfirmModal(
+      context,
+      title: '¿Limpiar notificaciones?',
+      message: 'Se eliminarán todas tus notificaciones de forma permanente.',
+      confirmLabel: 'Limpiar todo',
+      isDanger: true,
+    );
+    if (!confirmed || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ApiService().eliminarTodosLosAvisos(todas: true);
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _busy = false);
+        showAppToast(context, e.message, type: 'error');
+      }
+      return;
+    } catch (_) {
+      if (mounted) {
+        setState(() => _busy = false);
+        showAppToast(context, 'No se pudieron eliminar.', type: 'error');
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() => _dismissing = _notifications.map((n) => n.id).toSet());
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (!mounted) return;
+    setState(() {
+      _notifications = const <AppNotification>[];
+      _dismissing = {};
+      _busy = false;
+    });
+    showAppToast(context, 'Todas las notificaciones eliminadas.');
   }
 
   void _openRecommendation(Recommendation rec) {
@@ -120,36 +278,84 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
-  // ── UI ──
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: RoutineColors.background,
-      appBar: AppBar(
-        backgroundColor: RoutineColors.background,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        leading: const MenuButton(),
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          'Notificaciones y Feedback',
-          style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
-        ),
-      ),
-      drawer: const UserDrawer(
-        selectedId: 'notificaiones',
-      ), // cambia el id en cada archivo
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+      key: _scaffoldKey,
+      backgroundColor: DashColors.bg,
+      drawer: const UserDrawer(selectedId: 'notificaciones'),
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: AppGradients.userPanelBg),
+        child: SafeArea(
+          bottom: false,
           child: Column(
             children: [
-              _buildNotificationsPanel(),
-              const SizedBox(height: 16),
-              _buildRecommendationsPanel(),
+              _topBar(),
+              Expanded(
+                child: RefreshIndicator(
+                  color: DashColors.blueLight,
+                  backgroundColor: DashColors.card,
+                  onRefresh: () => _cargar(silent: true),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 36),
+                    child: Column(
+                      children: [
+                        _buildNotificationsPanel(),
+                        const SizedBox(height: 16),
+                        _buildRecommendationsPanel(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _topBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: DashColors.border)),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => _scaffoldKey.currentState?.openDrawer(),
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: DashColors.card,
+                borderRadius: BorderRadius.circular(AppRadii.panel),
+                border: Border.all(color: DashColors.border),
+              ),
+              child: const Icon(
+                Icons.menu_rounded,
+                size: 22,
+                color: DashColors.textPrimary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Text(
+              'Notificaciones y Feedback',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                color: DashColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -161,9 +367,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: RoutineColors.card,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: RoutineColors.border),
+        color: DashColors.cardDark,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: DashColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,26 +379,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               const Text(
                 'Notificaciones',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
+                  fontFamily: 'Poppins',
+                  color: DashColors.textPrimary,
+                  fontSize: 19,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               if (_unreadCount > 0) ...[
                 const SizedBox(width: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 2,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF97316),
+                    color: DashColors.orange,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '$_unreadCount',
                     style: const TextStyle(
-                      color: Colors.white,
+                      fontFamily: 'Poppins',
+                      color: DashColors.textPrimary,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -206,25 +412,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             spacing: 4,
             children: [
               TextButton.icon(
-                onPressed: _markAllRead,
+                onPressed: _busy ? null : _markAllRead,
                 icon: const Icon(Icons.done_all_rounded, size: 17),
                 label: const Text('Marcar todas como leídas'),
                 style: TextButton.styleFrom(
-                  foregroundColor: RoutineColors.textMuted,
+                  foregroundColor: DashColors.muted,
                   textStyle: const TextStyle(
-                    fontSize: 13,
+                    fontFamily: 'Poppins',
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               TextButton.icon(
-                onPressed: _clearAll,
+                onPressed: _busy ? null : _clearAll,
                 icon: const Icon(Icons.delete_outline_rounded, size: 17),
                 label: const Text('Limpiar'),
                 style: TextButton.styleFrom(
-                  foregroundColor: RoutineColors.textMuted,
+                  foregroundColor: DashColors.muted,
                   textStyle: const TextStyle(
-                    fontSize: 13,
+                    fontFamily: 'Poppins',
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -237,7 +445,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             onSelect: (v) => setState(() => _filter = v),
           ),
           const SizedBox(height: 16),
-          if (filtered.isEmpty)
+          if (_estado == _ScreenState.loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 28),
+              child: Center(
+                child: CircularProgressIndicator(color: DashColors.blueLight),
+              ),
+            )
+          else if (_estado == _ScreenState.error)
+            _errorState()
+          else if (filtered.isEmpty)
             _emptyState()
           else
             for (final n in filtered)
@@ -245,7 +462,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 key: ValueKey(n.id),
                 notification: n,
                 dismissing: _dismissing.contains(n.id),
-                onTap: () => _markAsRead(n.id),
+                busy: _busy,
+                onTap: () => _openNotification(n),
                 onMarkRead: () => _markAsRead(n.id),
                 onDelete: () => _dismiss(n.id),
               ),
@@ -254,21 +472,64 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _emptyState() {
+  Widget _errorState() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 36),
+      padding: const EdgeInsets.symmetric(vertical: 28),
       child: Center(
         child: Column(
-          children: const [
+          children: [
+            const Icon(
+              Icons.notifications_off_outlined,
+              size: 40,
+              color: DashColors.muted,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _error.isNotEmpty
+                  ? _error
+                  : 'No se pudieron cargar las notificaciones.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                color: DashColors.muted,
+                fontSize: 13.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _cargar,
+              icon: const Icon(Icons.refresh_rounded, size: 17),
+              label: const Text('Reintentar'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: DashColors.textSecondary,
+                side: const BorderSide(color: DashColors.coachBorder),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyState() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 34),
+      child: Center(
+        child: Column(
+          children: [
             Icon(
               Icons.notifications_off_outlined,
-              size: 42,
-              color: RoutineColors.textMuted,
+              size: 40,
+              color: DashColors.muted,
             ),
             SizedBox(height: 12),
             Text(
               'No hay notificaciones aquí.',
-              style: TextStyle(color: RoutineColors.textMuted, fontSize: 14),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: DashColors.muted,
+                fontSize: 13.5,
+              ),
             ),
           ],
         ),
@@ -281,9 +542,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: RoutineColors.card,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: RoutineColors.border),
+        color: DashColors.cardDark,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: DashColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,8 +552,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           const Text(
             'Recomendaciones para ti',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
+              fontFamily: 'Poppins',
+              color: DashColors.textPrimary,
+              fontSize: 17.5,
               fontWeight: FontWeight.w800,
             ),
           ),

@@ -1,109 +1,203 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-const _bg = Color(0xFF0C1020);
-const _text = Color(0xFFE8EAF6);
-const _muted = Color(0xFF8892B0);
-const _label = Color(0xFF4A5568);
-const _hover = Color(0xFF161E33);
-const _blue = Color(0xFF4F6EF7);
-const _purple = Color(0xFF7C3AED);
-const _border = Color(0x12FFFFFF); // blanco 7%
+import '../../models/profile_data.dart';
+import '../../screens/login_screen.dart';
+import '../../services/api_service.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/dash_colors.dart';
 
-class _Item {
-  final String label;
-  final IconData icon;
-  final int index;
-  const _Item(this.label, this.icon, this.index);
+class _NavItem {
+  final String id, label;
+  final FaIconData icon;
+  const _NavItem(this.id, this.icon, this.label);
 }
 
-class _Group {
-  final String name;
-  final List<_Item> items;
-  const _Group(this.name, this.items);
+class _NavGroup {
+  final String group;
+  final List<_NavItem> items;
+  const _NavGroup(this.group, this.items);
 }
 
-// El índice de cada item corresponde a la página en EntrenadorShell
-const _nav = [
-  _Group('Principal', [
-    _Item('Dashboard', Icons.home_rounded, 0),
-    _Item('Perfil', Icons.person_rounded, 1),
-    _Item('Deportistas', Icons.groups_rounded, 2),
-    _Item('Horario', Icons.calendar_month_rounded, 3),
+const _nav = <_NavGroup>[
+  _NavGroup('Principal', [
+    _NavItem('dashboard', FontAwesomeIcons.house, 'Dashboard'),
+    _NavItem('perfil', FontAwesomeIcons.user, 'Perfil'),
+    _NavItem('gestion', FontAwesomeIcons.users, 'Deportistas'),
+    _NavItem('equipos', FontAwesomeIcons.peopleGroup, 'Equipos'),
+    _NavItem('horario', FontAwesomeIcons.calendarDays, 'Horario'),
+    _NavItem('partidos', FontAwesomeIcons.trophy, 'Partidos'),
   ]),
-  _Group('Análisis', [
-    _Item('Estadísticas', Icons.bar_chart_rounded, 4),
-    _Item('Rutinas', Icons.fitness_center_rounded, 5),
-    _Item('Reportes', Icons.description_rounded, 6),
-    _Item('Análisis IA', Icons.memory_rounded, 7),
+  _NavGroup('Análisis', [
+    _NavItem('estadisticas', FontAwesomeIcons.chartBar, 'Estadísticas'),
+    _NavItem('rutinas', FontAwesomeIcons.dumbbell, 'Rutinas'),
+    _NavItem('registro_rutinas', FontAwesomeIcons.clipboardCheck, 'Registro de rutinas'),
+    _NavItem('reportes', FontAwesomeIcons.fileLines, 'Reportes'),
+    _NavItem('analisis', FontAwesomeIcons.microchip, 'Análisis IA'),
   ]),
-  _Group('Sistema', [_Item('Configuración', Icons.settings_rounded, 8)]),
+  _NavGroup('Sistema', [
+    _NavItem('configuracion', FontAwesomeIcons.gear, 'Configuración'),
+  ]),
 ];
 
-class EntrenadorSidebar extends StatelessWidget {
-  final int selectedIndex;
-  final ValueChanged<int> onSelect;
+/// Sidebar / Drawer del panel de entrenador alineado con `VolleyScan_Next/src/app/components/Sidebar.jsx`.
+class EntrenadorSidebar extends StatefulWidget {
+  final String selectedId;
+  final ValueChanged<String> onSelect;
+  final String? nombre, apellido, fotoUrl, role;
 
   const EntrenadorSidebar({
     super.key,
-    required this.selectedIndex,
+    required this.selectedId,
     required this.onSelect,
+    this.nombre,
+    this.apellido,
+    this.fotoUrl,
+    this.role,
   });
+
+  @override
+  State<EntrenadorSidebar> createState() => _EntrenadorSidebarState();
+}
+
+class _EntrenadorSidebarState extends State<EntrenadorSidebar> {
+  ProfileData? _usuario;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarEntrenador();
+  }
+
+  Future<void> _cargarEntrenador() async {
+    try {
+      final guardado = await ApiService.getUsuario();
+      if (mounted && guardado != null) {
+        setState(() => _usuario = ProfileData.fromJson(guardado));
+      }
+      final remoto = await ApiService().me();
+      if (mounted) setState(() => _usuario = ProfileData.fromJson(remoto));
+    } on ApiException catch (e) {
+      if (e.isUnauthorized && mounted) {
+        final nav = ApiService.navigatorKey.currentState ?? Navigator.of(context);
+        nav.pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (_) => false,
+        );
+      }
+    } catch (_) {
+      // Fallback silencioso: conserva el usuario en caché local si no hay red.
+    }
+  }
+
+  String get _nombre {
+    final prop = '${widget.nombre ?? ''} ${widget.apellido ?? ''}'.trim();
+    if (prop.isNotEmpty) return prop;
+    final n = _usuario?.nombre.trim() ?? '';
+    final a = _usuario?.apellido.trim() ?? '';
+    final full = [n, a].where((s) => s.isNotEmpty).join(' ');
+    return full.isNotEmpty ? full : 'Entrenador';
+  }
+
+  String get _iniciales {
+    final parts = _nombre.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
+    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    if (parts.isNotEmpty && parts[0].length >= 2) {
+      return parts[0].substring(0, 2).toUpperCase();
+    }
+    return 'EN';
+  }
+
+  String? get _fotoResuelta {
+    final raw = (widget.fotoUrl ?? _usuario?.fotoUrl ?? '').trim();
+    if (raw.isEmpty) return null;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    final origin = Uri.parse(ApiService.baseUrl).origin;
+    return raw.startsWith('/') ? '$origin$raw' : '$origin/$raw';
+  }
+
+  String get _rol =>
+      (widget.role ?? '').trim().isNotEmpty ? widget.role!.trim() : 'Entrenador';
+
+  Future<void> _confirmarCerrarSesion() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      barrierColor: DashColors.modalOverlay,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: DashColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          side: const BorderSide(color: DashColors.border2),
+        ),
+        title: const Text('Cerrar sesión', style: TextStyle(color: DashColors.text1, fontWeight: FontWeight.w700)),
+        content: const Text(
+          '¿Seguro que quieres cerrar sesión en VolleyScan?',
+          style: TextStyle(color: DashColors.textMuted, fontSize: 13.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar', style: TextStyle(color: DashColors.textMuted)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: DashColors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Cerrar sesión'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+    final nav = ApiService.navigatorKey.currentState ?? Navigator.of(context);
+    Scaffold.maybeOf(context)?.closeDrawer();
+    await ApiService().cerrarSesionCompleta();
+    nav.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginScreen()), (_) => false);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 230,
-      decoration: const BoxDecoration(
-        color: _bg,
-        border: Border(right: BorderSide(color: _border)),
-      ),
+      width: 250,
+      color: DashColors.sidebarBg,
       child: SafeArea(
         child: Column(
           children: [
-            _buildLogo(),
+            _header(),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 16,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
                 children: [
                   for (final g in _nav) ...[
                     Padding(
                       padding: const EdgeInsets.fromLTRB(10, 12, 10, 6),
                       child: Text(
-                        g.name.toUpperCase(),
+                        g.group.toUpperCase(),
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 1,
-                          color: _label,
+                          letterSpacing: 1.0,
+                          color: DashColors.text3,
                         ),
                       ),
                     ),
-                    for (final item in g.items)
-                      _NavItem(
-                        item: item,
-                        active: item.index == selectedIndex,
-                        onTap: () => onSelect(item.index),
-                      ),
+                    for (final item in g.items) _tile(item, item.id == widget.selectedId),
                   ],
                 ],
               ),
             ),
-            _buildFooter(),
+            _footer(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLogo() {
+  Widget _header() {
     return Container(
       height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: _border)),
+        border: Border(bottom: BorderSide(color: DashColors.borderSubtle)),
       ),
       child: Row(
         children: [
@@ -111,115 +205,27 @@ class EntrenadorSidebar extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
+              gradient: AppGradients.sidebarLogoIcon,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(color: _blue.withOpacity(0.45), blurRadius: 22),
-              ],
+              boxShadow: const [BoxShadow(color: DashColors.sidebarActiveGlow, blurRadius: 16)],
             ),
-            // Tu logo. Cambia el nombre si tu archivo se llama distinto.
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.asset(
                 'assets/images/Logo.VS.jpg',
                 fit: BoxFit.cover,
-                // Si la imagen no se encuentra, muestra el icono de antes
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(colors: [_blue, _purple]),
-                  ),
-                  child: const Icon(
-                    Icons.sports_volleyball,
-                    color: Colors.white,
-                  ),
-                ),
+                errorBuilder: (_, _, _) => const Icon(Icons.sports_volleyball, size: 22, color: DashColors.text1),
               ),
             ),
           ),
           const SizedBox(width: 12),
-          const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'VolleyAI',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: _text,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text('Entrenador', style: TextStyle(fontSize: 11, color: _label)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFooter() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: _border)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(colors: [_blue, _purple]),
-              boxShadow: [
-                BoxShadow(color: _blue.withOpacity(0.35), blurRadius: 14),
-              ],
-            ),
-            child: const Text(
-              'AL',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(width: 11),
           const Expanded(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Agustín Luligo',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: _text,
-                  ),
-                ),
-                SizedBox(height: 1),
-                Text(
-                  'Entrenador principal',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 10.5, color: _muted),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 9,
-            height: 9,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF22C55E),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF22C55E).withOpacity(0.6),
-                  blurRadius: 8,
-                ),
+                Text('VolleyAI', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.3, color: DashColors.text1)),
+                Text('Entrenador', style: TextStyle(fontSize: 11, color: DashColors.text3)),
               ],
             ),
           ),
@@ -227,69 +233,87 @@ class EntrenadorSidebar extends StatelessWidget {
       ),
     );
   }
-}
 
-class _NavItem extends StatelessWidget {
-  final _Item item;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.item,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _tile(_NavItem item, bool active) {
+    final color = active ? DashColors.text1 : DashColors.textMuted;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(9),
         child: Material(
           color: Colors.transparent,
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: active
-                  ? LinearGradient(
-                      colors: [
-                        _blue.withOpacity(0.22),
-                        _blue.withOpacity(0.04),
-                      ],
-                    )
-                  : null,
-            ),
-            child: InkWell(
-              onTap: onTap,
-              hoverColor: _hover,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(9, 10, 12, 10),
-                decoration: BoxDecoration(
-                  border: Border(
-                    left: BorderSide(
-                      width: 3,
-                      color: active ? _purple : Colors.transparent,
+          child: InkWell(
+            hoverColor: DashColors.sidebarItemHover,
+            onTap: () => widget.onSelect(item.id),
+            child: Ink(
+              height: 42,
+              decoration: active ? const BoxDecoration(gradient: AppGradients.sidebarActiveItem) : null,
+              child: Row(
+                children: [
+                  Container(width: 3, height: 42, color: active ? DashColors.sidebarActiveBorder : Colors.transparent),
+                  const SizedBox(width: 9),
+                  SizedBox(width: 15, child: FaIcon(item.icon, size: 15, color: active ? DashColors.sidebarActiveBorder : color)),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      item.label,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 13, fontWeight: active ? FontWeight.w700 : FontWeight.w500, color: color),
                     ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(item.icon, size: 18, color: active ? _purple : _muted),
-                    const SizedBox(width: 14),
-                    Text(
-                      item.label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                        color: active ? _text : _muted,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _footer() {
+    final foto = _fotoResuelta;
+    final fallback = Text(_iniciales, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white));
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: DashColors.borderSubtle))),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: AppGradients.sidebarLogoIcon,
+              boxShadow: [BoxShadow(color: DashColors.sidebarActiveGlow, blurRadius: 14)],
+            ),
+            child: foto != null
+                ? ClipOval(child: Image.network(foto, width: 38, height: 38, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback))
+                : fallback,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_nombre, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: DashColors.text1)),
+                Text(_rol, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10.5, color: DashColors.textMuted)),
+              ],
+            ),
+          ),
+          Container(
+            width: 9,
+            height: 9,
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: DashColors.green, boxShadow: [BoxShadow(color: DashColors.greenGlow, blurRadius: 8)]),
+          ),
+          const SizedBox(width: 2),
+          IconButton(
+            onPressed: _confirmarCerrarSesion,
+            icon: const Icon(Icons.logout_rounded, size: 18, color: DashColors.red),
+            tooltip: 'Cerrar sesión',
+          ),
+        ],
       ),
     );
   }

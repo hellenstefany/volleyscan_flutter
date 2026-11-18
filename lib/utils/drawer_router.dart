@@ -5,12 +5,15 @@ import '../screens/coach_screen.dart';
 import '../screens/content_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/history_screen.dart';
+import '../screens/matches_screen.dart';
+import '../screens/my_level_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/progress_screen.dart';
 import '../screens/routines_screen.dart';
+import '../screens/schedule_screen.dart';
 import '../screens/settings_screen.dart';
-import '../theme/app_theme.dart';
+import '../screens/teams_screen.dart';
 
 void goToMenuItem(
   BuildContext context,
@@ -48,35 +51,19 @@ void goToMenuItem(
       replace(const CoachScreen());
       break;
     case 'equipos':
-      showAppToast(
-        context,
-        'Próximamente disponible: Mis equipos',
-        type: 'info',
-      );
+      replace(const TeamsScreen());
       break;
     case 'horario':
-      showAppToast(
-        context,
-        'Próximamente disponible: Horario',
-        type: 'info',
-      );
+      replace(const ScheduleScreen());
       break;
     case 'partidos':
-      showAppToast(
-        context,
-        'Próximamente disponible: Mis partidos',
-        type: 'info',
-      );
+      replace(const MatchesScreen());
       break;
     case 'rutinas':
       replace(const RoutinesScreen());
       break;
     case 'mi_nivel':
-      showAppToast(
-        context,
-        'Próximamente disponible: Mi nivel',
-        type: 'info',
-      );
+      replace(const MyLevelScreen());
       break;
     case 'historial':
       replace(const HistoryScreen());

@@ -8,6 +8,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/coach_link_data.dart';
+import '../models/my_level_data.dart';
+import '../models/my_matches_data.dart';
+import '../models/my_teams_data.dart';
+import '../models/notification_data.dart';
+import '../models/routine_data.dart';
+import '../models/schedule_data.dart';
 import '../models/content_data.dart';
 import '../models/dashboard_data.dart';
 import '../models/device_data.dart';
@@ -596,6 +602,51 @@ class ApiService {
     return const AvisosContadorResponse(noLeidas: 0);
   }
 
+  /// Lista las notificaciones/avisos del usuario (`GET /api/ia/avisos`).
+  Future<AvisosListResponse> listarAvisos({
+    int limite = 100,
+    bool todas = true,
+    bool soloNoLeidas = false,
+  }) async {
+    final params = <String>[
+      'limite=$limite',
+      if (soloNoLeidas) 'soloNoLeidas=1',
+      if (todas) 'todas=1',
+    ];
+    final data = await get('/ia/avisos?${params.join('&')}');
+    if (data is Map) {
+      return AvisosListResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const AvisosListResponse();
+  }
+
+  /// Marca un aviso como leído (`POST /api/ia/avisos/<id>/leida`).
+  Future<int> marcarAvisoLeida(int id, {bool todas = true}) async {
+    final query = todas ? '?todas=1' : '';
+    final data = await post('/ia/avisos/$id/leida$query', const <String, dynamic>{});
+    if (data is Map && data['noLeidas'] != null) {
+      return int.tryParse(data['noLeidas'].toString()) ?? 0;
+    }
+    return 0;
+  }
+
+  /// Marca todos los avisos como leídos (`POST /api/ia/avisos/leer-todas`).
+  Future<void> marcarTodosLosAvisosLeidos({bool todas = true}) async {
+    final query = todas ? '?todas=1' : '';
+    await post('/ia/avisos/leer-todas$query', const <String, dynamic>{});
+  }
+
+  /// Elimina un aviso (`DELETE /api/ia/avisos/<id>`).
+  Future<void> eliminarAviso(int id) async {
+    await delete('/ia/avisos/$id');
+  }
+
+  /// Elimina todos los avisos del usuario (`DELETE /api/ia/avisos`).
+  Future<void> eliminarTodosLosAvisos({bool todas = true}) async {
+    final query = todas ? '?todas=1' : '';
+    await delete('/ia/avisos$query');
+  }
+
   // ---------- Contenido Educativo ----------
 
   /// Obtiene el catálogo de videos educativos (`GET /api/usuario/contenido/`).
@@ -671,6 +722,142 @@ class ApiService {
   /// Cancela una solicitud pendiente o finaliza el vínculo activo (`DELETE /api/ia/vinculos/mi-entrenador`).
   Future<void> cancelarOSalirEntrenador() async {
     await delete('/ia/vinculos/mi-entrenador');
+  }
+
+  // ---------- Mis Equipos (Deportista) ----------
+
+  /// Lista los equipos activos del deportista (`GET /api/ia/mis-equipos`).
+  Future<List<MyTeam>> misEquipos() async {
+    final data = await get('/ia/mis-equipos');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) => MyTeam.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+    }
+    return const <MyTeam>[];
+  }
+
+  /// Lista las invitaciones pendientes dirigidas al correo del usuario (`GET /api/ia/invitaciones/mias`).
+  Future<List<TeamInvitation>> misInvitaciones() async {
+    final data = await get('/ia/invitaciones/mias');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) =>
+              TeamInvitation.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+    }
+    return const <TeamInvitation>[];
+  }
+
+  /// Acepta o rechaza una invitación pendiente (`POST /api/ia/invitaciones/<id>/<accion>`).
+  Future<InvitationActionResult> responderInvitacion(
+    int invitacionId,
+    String accion,
+  ) async {
+    final data = await post(
+      '/ia/invitaciones/$invitacionId/$accion',
+      const <String, dynamic>{},
+    );
+    if (data is Map) {
+      return InvitationActionResult.fromJson(Map<String, dynamic>.from(data));
+    }
+    return InvitationActionResult(
+      estado: accion == 'aceptar' ? 'aceptada' : 'rechazada',
+      equipoId: 0,
+      equipo: '',
+      tipo: 'deportista',
+    );
+  }
+
+  // ---------- Horario (Agenda del deportista) ----------
+
+  /// Obtiene la agenda del deportista en un rango de fechas (`GET /api/ia/mi-horario`).
+  Future<List<ScheduleEvent>> miHorario({
+    required String desde,
+    required String hasta,
+  }) async {
+    final query =
+        '?desde=${Uri.encodeQueryComponent(desde)}&hasta=${Uri.encodeQueryComponent(hasta)}';
+    final data = await get('/ia/mi-horario$query');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) => ScheduleEvent.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+    }
+    return const <ScheduleEvent>[];
+  }
+
+  // ---------- Mis Partidos (Deportista) ----------
+
+  /// Obtiene los partidos jugados del atleta y su acumulado (`GET /api/ia/mis-partidos`).
+  Future<MyMatchesResponse> misPartidos() async {
+    final data = await get('/ia/mis-partidos');
+    if (data is Map) {
+      return MyMatchesResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const MyMatchesResponse();
+  }
+
+  // ---------- Mis Rutinas (Deportista) ----------
+
+  /// Lista las rutinas asignadas al atleta (`GET /api/usuario/rutinas/`).
+  Future<List<RoutineSummary>> listarRutinas() async {
+    final data = await get('/usuario/rutinas/');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map(
+            (item) => RoutineSummary.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList();
+    }
+    return const <RoutineSummary>[];
+  }
+
+  /// Obtiene el detalle de una rutina con sus ejercicios (`GET /api/usuario/rutinas/<id>/`).
+  Future<RoutineDetail> detalleRutina(int rutinaId) async {
+    final data = await get('/usuario/rutinas/$rutinaId/');
+    if (data is Map) {
+      return RoutineDetail.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw ApiException(
+      statusCode: 0,
+      message: 'No se pudo leer el detalle de la rutina.',
+    );
+  }
+
+  /// Marca o desmarca un ejercicio como completado (`PUT /api/usuario/rutinas/<id>/ejercicios/<eid>/completar/`).
+  Future<ToggleExerciseResult> completarEjercicio({
+    required int rutinaId,
+    required int ejercicioId,
+    required bool completado,
+  }) async {
+    final data = await put(
+      '/usuario/rutinas/$rutinaId/ejercicios/$ejercicioId/completar/',
+      {'completado': completado},
+    );
+    if (data is Map) {
+      return ToggleExerciseResult.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw ApiException(
+      statusCode: 0,
+      message: 'Respuesta inesperada al actualizar el ejercicio.',
+    );
+  }
+
+  // ---------- Mi Nivel (Deportista) ----------
+
+  /// Obtiene el nivel actual, criterios de avance, revisiones e historial (`GET /api/ia/mi-nivel`).
+  Future<MyLevelResponse> miNivel() async {
+    final tzOffset = -DateTime.now().timeZoneOffset.inMinutes;
+    final data = await get('/ia/mi-nivel?tz=$tzOffset');
+    if (data is Map) {
+      return MyLevelResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const MyLevelResponse();
   }
 
   /// Convierte URL relativa `/media/...` en absoluta respecto al host del backend.
