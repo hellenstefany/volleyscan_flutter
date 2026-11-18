@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/coach_link_data.dart';
 import '../models/my_teams_data.dart';
+import '../models/schedule_data.dart';
 import '../models/content_data.dart';
 import '../models/dashboard_data.dart';
 import '../models/device_data.dart';
@@ -719,6 +720,25 @@ class ApiService {
       equipo: '',
       tipo: 'deportista',
     );
+  }
+
+  // ---------- Horario (Agenda del deportista) ----------
+
+  /// Obtiene la agenda del deportista en un rango de fechas (`GET /api/ia/mi-horario`).
+  Future<List<ScheduleEvent>> miHorario({
+    required String desde,
+    required String hasta,
+  }) async {
+    final query =
+        '?desde=${Uri.encodeQueryComponent(desde)}&hasta=${Uri.encodeQueryComponent(hasta)}';
+    final data = await get('/ia/mi-horario$query');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) => ScheduleEvent.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+    }
+    return const <ScheduleEvent>[];
   }
 
   /// Convierte URL relativa `/media/...` en absoluta respecto al host del backend.
