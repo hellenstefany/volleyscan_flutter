@@ -6,14 +6,12 @@ import '../theme/app_theme.dart';
 import '../theme/dash_colors.dart';
 import '../widgets/usuario/shared/dashboard_bottom_nav.dart';
 import '../widgets/usuario/dashboard/dashboard_header.dart';
-import '../widgets/usuario/dashboard/dashboard_quick_access.dart';
 import '../widgets/usuario/dashboard/dashboard_top_summary.dart';
 import '../widgets/usuario/drawer/menu_button.dart';
 import '../widgets/usuario/progreso/mi_progreso_section.dart';
 import 'ai_history_screen.dart';
 import 'analysis_screen.dart';
 import 'coach_screen.dart';
-import 'content_screen.dart';
 import 'history_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
@@ -263,14 +261,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               onOpenRoutines: () => _go(const RoutinesScreen()),
                             ),
                             const SizedBox(height: AppSpacing.dashSectionGap),
-                            DashboardQuickAccess(
-                              onStartAnalysis: () =>
-                                  _go(const AnalysisScreen()),
-                              onViewHistory: () => _go(const HistoryScreen()),
-                              onDailyRoutine: () => _go(const RoutinesScreen()),
-                              onExercises: () => _go(const ContentScreen()),
-                            ),
-                            const SizedBox(height: 24),
                             MiProgresoSection(
                               loading: _loadingProgreso,
                               error: _errorProgreso,
