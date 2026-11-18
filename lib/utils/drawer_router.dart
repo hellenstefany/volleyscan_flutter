@@ -6,6 +6,7 @@ import '../screens/content_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/matches_screen.dart';
+import '../screens/my_level_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/progress_screen.dart';
@@ -13,7 +14,6 @@ import '../screens/routines_screen.dart';
 import '../screens/schedule_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/teams_screen.dart';
-import '../theme/app_theme.dart';
 
 void goToMenuItem(
   BuildContext context,
@@ -63,11 +63,7 @@ void goToMenuItem(
       replace(const RoutinesScreen());
       break;
     case 'mi_nivel':
-      showAppToast(
-        context,
-        'Próximamente disponible: Mi nivel',
-        type: 'info',
-      );
+      replace(const MyLevelScreen());
       break;
     case 'historial':
       replace(const HistoryScreen());
