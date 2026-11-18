@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 
 // ───────── Colores (de tu :root en Horario.css) ─────────
 class _C {
-  static const bg2 = Color(0xFF0C1220);
   static const card = Color(0xFF0E1525);
   static const card2 = Color(0xFF121D30);
   static const card3 = Color(0xFF172038);
-  static const hover = Color(0xFF1A2540);
   static const border = Color(0x0FFFFFFF); // rgba(255,255,255,.06)
   static const border2 = Color(0x1CFFFFFF); // rgba(255,255,255,.11)
   static const blue = Color(0xFF3B82F6);
