@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'analisis_theme.dart';
 
-/// Barra de "analizando" con segmento que se desplaza.
+/// Barra de "Analizando" con segmento que se desplaza (`.ai-thinking-bar` en `Analisis.css`).
 class AnalisisThinkingBar extends StatefulWidget {
   const AnalisisThinkingBar({super.key});
 
@@ -34,7 +34,7 @@ class _AnalisisThinkingBarState extends State<AnalisisThinkingBar>
         color: AnalisisTheme.line,
         child: AnimatedBuilder(
           animation: _c,
-          builder: (_, __) {
+          builder: (_, _) {
             final seg = w * 0.4;
             final dx = -seg + (w + seg) * Curves.easeInOut.transform(_c.value);
             return Stack(
@@ -50,7 +50,7 @@ class _AnalisisThinkingBarState extends State<AnalisisThinkingBar>
                       borderRadius: BorderRadius.circular(4),
                       boxShadow: [
                         BoxShadow(
-                          color: AnalisisTheme.accent.withOpacity(0.53),
+                          color: AnalisisTheme.accent.withValues(alpha: 0.6),
                           blurRadius: 10,
                         ),
                       ],

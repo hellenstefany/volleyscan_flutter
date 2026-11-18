@@ -128,6 +128,20 @@ class AppGradients {
     end: Alignment.bottomRight,
     colors: [DashColors.configBlueStart, DashColors.configBlueEnd],
   );
+
+  /// Gradiente de acento para Chat IA (`Analisis.css`: `--ai-gradient`).
+  static const aiAccent = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [DashColors.teal, DashColors.blueLight],
+  );
+
+  /// Gradiente de superficie para burbujas/tarjetas de Chat IA.
+  static const aiSurface = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [DashColors.card, DashColors.card2],
+  );
 }
 
 class AppRadii {

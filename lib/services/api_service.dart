@@ -56,6 +56,13 @@ class ApiService {
   /// `flutter run --dart-define=API_URL=http://192.168.1.50:8000/api`
   static const String _envBaseUrl = String.fromEnvironment('API_URL');
 
+  /// Permite sobreescribir la URL del microservicio de Chat IA:
+  /// `flutter run --dart-define=AI_API_URL=http://192.168.1.50:8010`
+  static const String _envAiBaseUrl = String.fromEnvironment(
+    'AI_API_URL',
+    defaultValue: '',
+  );
+
   /// URL base:
   /// - Si se pasa `--dart-define=API_URL=...`, usa ese valor.
   /// - En Android (emulador): `http://10.0.2.2:8000/api`
@@ -70,6 +77,22 @@ class ApiService {
       return 'http://10.0.2.2:8000/api';
     }
     return 'http://127.0.0.1:8000/api';
+  }
+
+  /// URL base del servicio de Chat IA (`:8010` en Next `src/app/services/api.js`):
+  /// - Si se pasa `--dart-define=AI_API_URL=...`, usa ese valor.
+  /// - En Android (emulador): `http://10.0.2.2:8010`
+  /// - En Web / Windows / iOS Simulator: `http://127.0.0.1:8010`
+  static String get aiBaseUrl {
+    if (_envAiBaseUrl.isNotEmpty) {
+      return _envAiBaseUrl.endsWith('/')
+          ? _envAiBaseUrl.substring(0, _envAiBaseUrl.length - 1)
+          : _envAiBaseUrl;
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8010';
+    }
+    return 'http://127.0.0.1:8010';
   }
 
   /// Key global de navegación para redirigir al Login cuando vence el JWT (401).
@@ -858,6 +881,67 @@ class ApiService {
       return MyLevelResponse.fromJson(Map<String, dynamic>.from(data));
     }
     return const MyLevelResponse();
+  }
+
+  // ---------- Chat IA (Microservicio :8010) ----------
+
+  /// Envía una consulta al entrenador virtual (`POST $aiBaseUrl/chat`).
+  Future<String> enviarMensajeChatIA(String mensaje) async {
+    const aiTimeout = Duration(seconds: 30);
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$aiBaseUrl/chat'),
+            headers: const {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'mensaje': mensaje}),
+          )
+          .timeout(aiTimeout);
+
+      final body = _decodeBody(response);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (body is Map && body['respuesta'] != null) {
+          return body['respuesta'].toString();
+        }
+        throw const ApiException(
+          statusCode: 0,
+          message: 'Respuesta inesperada de VolleyScan AI.',
+        );
+      }
+
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: _extractErrorMessage(response.statusCode, body),
+        data: body,
+      );
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw const ApiException(
+        statusCode: 0,
+        message:
+            'Tiempo de espera agotado al conectar con VolleyScan AI (:8010).',
+      );
+    } on SocketException {
+      throw const ApiException(
+        statusCode: 0,
+        message:
+            'No se pudo conectar con VolleyScan AI. Verifica que el servicio (:8010) esté encendido.',
+      );
+    } on http.ClientException {
+      throw const ApiException(
+        statusCode: 0,
+        message:
+            'No se pudo conectar con VolleyScan AI. Verifica que el servicio (:8010) esté encendido.',
+      );
+    } catch (_) {
+      throw const ApiException(
+        statusCode: 0,
+        message: 'No se pudo conectar con VolleyScan AI.',
+      );
+    }
   }
 
   /// Convierte URL relativa `/media/...` en absoluta respecto al host del backend.

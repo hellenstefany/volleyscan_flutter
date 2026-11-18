@@ -143,7 +143,7 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
               ),
               onPressed: () => _go('analisis'),
               child: const Icon(
-                Icons.camera_alt_rounded,
+                Icons.auto_awesome_rounded,
                 color: Colors.white,
                 size: 26,
               ),

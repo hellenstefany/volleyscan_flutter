@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'analisis_theme.dart';
+import '../../../theme/app_theme.dart';
+import '../../../theme/dash_colors.dart';
 
-/// Logo de la app (assets/images/Logo.VS.jpg).
-/// Si la imagen no se encuentra, muestra el icono de antes.
+/// Logo de la app (`assets/images/Logo.VS.jpg`) con fallback vectorial.
 class AnalisisLogo extends StatelessWidget {
   final double size;
   final double radius;
+
   const AnalisisLogo({super.key, required this.size, required this.radius});
 
   @override
@@ -18,7 +19,7 @@ class AnalisisLogo extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
         boxShadow: [
           BoxShadow(
-            color: AnalisisTheme.accent.withOpacity(0.35),
+            color: DashColors.teal.withValues(alpha: 0.35),
             blurRadius: 22,
             offset: const Offset(0, 6),
           ),
@@ -29,11 +30,11 @@ class AnalisisLogo extends StatelessWidget {
         child: Image.asset(
           'assets/images/Logo.VS.jpg',
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            decoration: const BoxDecoration(gradient: AnalisisTheme.aiGradient),
+          errorBuilder: (_, _, _) => Container(
+            decoration: const BoxDecoration(gradient: AppGradients.aiAccent),
             child: Icon(
               Icons.sports_volleyball,
-              color: Colors.white,
+              color: DashColors.textPrimary,
               size: size * 0.55,
             ),
           ),

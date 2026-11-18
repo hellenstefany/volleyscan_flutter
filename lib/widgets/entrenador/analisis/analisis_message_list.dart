@@ -30,15 +30,17 @@ class AnalisisMessageList extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, c) {
-        final bubbleMax =
-            (narrow ? 0.9 : 0.74) *
-            (c.maxWidth - (narrow ? 32 : 64) - 54).clamp(0, 880);
+        final maxListWidth = (c.maxWidth - (narrow ? 32 : 64)).clamp(
+          200.0,
+          880.0,
+        );
+        final userBubbleMax = (narrow ? 0.90 : 0.74) * maxListWidth;
 
         return ListView.builder(
           controller: controller,
           padding: EdgeInsets.fromLTRB(
             narrow ? 16 : 32,
-            28,
+            20,
             narrow ? 16 : 32,
             20,
           ),
@@ -53,7 +55,7 @@ class AnalisisMessageList extends StatelessWidget {
                   m.coach && i == mensajes.length - 1 && mensajes.length > 1;
               child = AnalisisMessageBubble(
                 mensaje: m,
-                bubbleMax: bubbleMax.toDouble().clamp(200, 640),
+                bubbleMax: m.coach ? maxListWidth : userBubbleMax,
                 esUltimoCoach: esUltimoCoach,
                 escribiendo: escribiendo,
                 copiado: copiadoIndex == i,

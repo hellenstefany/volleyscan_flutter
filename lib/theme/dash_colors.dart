@@ -69,6 +69,7 @@ class DashColors {
   static const dangerOutlineBorder = Color(0x66EF4444); // rgba(239, 68, 68, .4) (.btn--danger-outline)
   static const greenBadgeBorder = Color(0x4D22C55E); // rgba(34, 197, 94, .3) (.device-badge)
   static const modalOverlay = Color(0xA6000000); // rgba(0, 0, 0, .65) (.modal-overlay)
+  static const shadowDark = Color(0x40000000); // rgba(0, 0, 0, .25)
 
   // Bordes (globals.css & perfil.css)
   static const border = Color(0x14FFFFFF); // --border: rgba(255, 255, 255, .08)

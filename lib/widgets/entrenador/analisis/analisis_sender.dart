@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'analisis_theme.dart';
+import '../../../theme/dash_colors.dart';
 
 class AnalisisSender extends StatelessWidget {
   final bool coach;
+
   const AnalisisSender({super.key, required this.coach});
 
   @override
@@ -18,7 +19,7 @@ class AnalisisSender extends StatelessWidget {
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: AnalisisTheme.textSecondary,
+              color: DashColors.textSecondary,
             ),
           ),
           if (coach) ...[
@@ -28,22 +29,23 @@ class AnalisisSender extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AnalisisTheme.accent.withOpacity(0.13),
-                    AnalisisTheme.blue.withOpacity(0.07),
+                    DashColors.teal.withValues(alpha: 0.16),
+                    DashColors.sky.withValues(alpha: 0.08),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(
-                  color: AnalisisTheme.accent.withOpacity(0.27),
+                  color: DashColors.teal.withValues(alpha: 0.32),
                 ),
               ),
-              child: Text(
+              child: const Text(
                 'IA',
-                style: AnalisisTheme.mono.copyWith(
+                style: TextStyle(
+                  fontFamily: 'monospace',
                   fontSize: 9.6,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
-                  color: const Color(0xFFB9A4FF),
+                  color: DashColors.badgePrepText,
                 ),
               ),
             ),

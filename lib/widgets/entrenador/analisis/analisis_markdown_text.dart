@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'analisis_theme.dart';
 
-/// Markdown mínimo: **negrita**, `## título`, `### subtítulo` y párrafos.
+/// Markdown mínimo (`.ai-bubble` en `Analisis.css`): **negrita**, `## título`, `### subtítulo` y párrafos.
 class AnalisisMarkdownText extends StatelessWidget {
   final String text;
+
   const AnalisisMarkdownText(this.text, {super.key});
 
   static const _base = TextStyle(
     fontSize: 14.9,
-    height: 1.7,
-    color: AnalisisTheme.textPrimary,
+    height: 1.75,
+    color: AnalisisTheme.text,
   );
 
   List<InlineSpan> _inline(String line, TextStyle style) {
@@ -50,32 +51,34 @@ class AnalisisMarkdownText extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(top: p == 0 ? 0 : 14),
             child: Text.rich(
-              TextSpan(children: _paragraph(paragraphs[p], p == 0)),
+              TextSpan(children: _paragraph(paragraphs[p])),
             ),
           ),
       ],
     );
   }
 
-  List<InlineSpan> _paragraph(String para, bool first) {
+  List<InlineSpan> _paragraph(String para) {
     final lines = para.split('\n');
     final spans = <InlineSpan>[];
     for (var i = 0; i < lines.length; i++) {
       final line = lines[i];
-      TextStyle style = first && i == 0
-          ? _base.copyWith(fontWeight: FontWeight.w500)
-          : _base;
+      TextStyle style = _base;
       String content = line;
 
       if (line.startsWith('### ')) {
         content = line.substring(4);
-        style = _base.copyWith(fontSize: 14.4, fontWeight: FontWeight.w700);
+        style = _base.copyWith(
+          fontSize: 16.0,
+          fontWeight: FontWeight.w700,
+          color: AnalisisTheme.text,
+        );
       } else if (line.startsWith('## ')) {
         content = line.substring(3);
         style = _base.copyWith(
-          fontSize: 16.8,
+          fontSize: 16.0,
           fontWeight: FontWeight.w700,
-          color: AnalisisTheme.accentHover,
+          color: AnalisisTheme.text,
         );
       }
 

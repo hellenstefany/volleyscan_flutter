@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'analisis_theme.dart';
+import '../../../theme/dash_colors.dart';
 
-/// Punto verde que pulsa (equivale a .ai-status-dot).
+/// Punto verde que pulsa.
 class AnalisisPulseDot extends StatefulWidget {
   const AnalisisPulseDot({super.key});
 
@@ -27,7 +27,7 @@ class _AnalisisPulseDotState extends State<AnalisisPulseDot>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _c,
-      builder: (_, __) {
+      builder: (_, _) {
         final t = _c.value;
         return Opacity(
           opacity: 1 - 0.6 * t,
@@ -37,10 +37,10 @@ class _AnalisisPulseDotState extends State<AnalisisPulseDot>
               width: 7,
               height: 7,
               decoration: const BoxDecoration(
-                color: AnalisisTheme.success,
+                color: DashColors.greenTeal,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: AnalisisTheme.success, blurRadius: 10),
+                  BoxShadow(color: DashColors.greenTeal, blurRadius: 10),
                 ],
               ),
             ),
