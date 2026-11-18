@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/coach_link_data.dart';
+import '../models/my_teams_data.dart';
 import '../models/content_data.dart';
 import '../models/dashboard_data.dart';
 import '../models/device_data.dart';
@@ -671,6 +672,53 @@ class ApiService {
   /// Cancela una solicitud pendiente o finaliza el vínculo activo (`DELETE /api/ia/vinculos/mi-entrenador`).
   Future<void> cancelarOSalirEntrenador() async {
     await delete('/ia/vinculos/mi-entrenador');
+  }
+
+  // ---------- Mis Equipos (Deportista) ----------
+
+  /// Lista los equipos activos del deportista (`GET /api/ia/mis-equipos`).
+  Future<List<MyTeam>> misEquipos() async {
+    final data = await get('/ia/mis-equipos');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) => MyTeam.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+    }
+    return const <MyTeam>[];
+  }
+
+  /// Lista las invitaciones pendientes dirigidas al correo del usuario (`GET /api/ia/invitaciones/mias`).
+  Future<List<TeamInvitation>> misInvitaciones() async {
+    final data = await get('/ia/invitaciones/mias');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) =>
+              TeamInvitation.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+    }
+    return const <TeamInvitation>[];
+  }
+
+  /// Acepta o rechaza una invitación pendiente (`POST /api/ia/invitaciones/<id>/<accion>`).
+  Future<InvitationActionResult> responderInvitacion(
+    int invitacionId,
+    String accion,
+  ) async {
+    final data = await post(
+      '/ia/invitaciones/$invitacionId/$accion',
+      const <String, dynamic>{},
+    );
+    if (data is Map) {
+      return InvitationActionResult.fromJson(Map<String, dynamic>.from(data));
+    }
+    return InvitationActionResult(
+      estado: accion == 'aceptar' ? 'aceptada' : 'rechazada',
+      equipoId: 0,
+      equipo: '',
+      tipo: 'deportista',
+    );
   }
 
   /// Convierte URL relativa `/media/...` en absoluta respecto al host del backend.
