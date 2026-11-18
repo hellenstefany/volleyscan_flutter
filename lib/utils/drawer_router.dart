@@ -9,6 +9,7 @@ import '../screens/notifications_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/progress_screen.dart';
 import '../screens/routines_screen.dart';
+import '../screens/schedule_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/teams_screen.dart';
 import '../theme/app_theme.dart';
@@ -52,11 +53,7 @@ void goToMenuItem(
       replace(const TeamsScreen());
       break;
     case 'horario':
-      showAppToast(
-        context,
-        'Próximamente disponible: Horario',
-        type: 'info',
-      );
+      replace(const ScheduleScreen());
       break;
     case 'partidos':
       showAppToast(
