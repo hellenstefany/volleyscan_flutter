@@ -21,6 +21,7 @@ import '../models/preferences_data.dart';
 import '../models/profile_data.dart';
 import '../models/progreso_atleta_data.dart';
 import '../widgets/entrenador/dashboard/dashboard_models.dart';
+import '../widgets/entrenador/perfil/perfil_model.dart';
 import '../screens/login_screen.dart';
 import '../theme/app_theme.dart';
 
@@ -925,6 +926,52 @@ class ApiService {
       return Map<String, dynamic>.from(data);
     }
     return const <String, dynamic>{};
+  }
+
+  /// Obtiene el perfil del entrenador (`GET /api/panel/perfil`, sin barra final)
+  /// y sincroniza `usuario` en `flutter_secure_storage`.
+  Future<EntrenadorPerfilData> obtenerPerfilEntrenador() async {
+    final data = await get('/panel/perfil');
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final perfil = EntrenadorPerfilData.fromJson(map);
+      await updateStoredUsuario({
+        'nombre': perfil.nombre,
+        'apellido': perfil.apellido,
+        'email': perfil.email,
+        'nivel': perfil.nivel,
+        'foto_url': perfil.fotoUrl,
+      });
+      return perfil;
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo cargar la información del perfil',
+    );
+  }
+
+  /// Actualiza el perfil del entrenador (`PATCH /api/panel/perfil`, sin barra final)
+  /// y sincroniza `usuario` en `flutter_secure_storage`.
+  Future<EntrenadorPerfilData> actualizarPerfilEntrenador(
+    Map<String, dynamic> cambios,
+  ) async {
+    final data = await patch('/panel/perfil', cambios);
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final perfil = EntrenadorPerfilData.fromJson(map);
+      await updateStoredUsuario({
+        'nombre': perfil.nombre,
+        'apellido': perfil.apellido,
+        'email': perfil.email,
+        'nivel': perfil.nivel,
+        'foto_url': perfil.fotoUrl,
+      });
+      return perfil;
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'Error al actualizar el perfil',
+    );
   }
 
   // ---------- Chat IA (Microservicio :8010) ----------
