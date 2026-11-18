@@ -11,14 +11,14 @@ class DashboardKpiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconSize = narrow ? 34.0 : 44.0;
+    final iconSize = narrow ? 38.0 : 44.0;
 
     final icon = Container(
       width: iconSize,
       height: iconSize,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: kpi.color.withOpacity(0.15),
+        color: kpi.color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(kpi.icon, style: TextStyle(fontSize: narrow ? 17 : 20)),
@@ -38,25 +38,25 @@ class DashboardKpiCard extends StatelessWidget {
             color: DashboardTheme.textSecondary,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         TweenAnimationBuilder<double>(
           tween: Tween(begin: 0, end: kpi.value.toDouble()),
-          duration: const Duration(milliseconds: 800),
+          duration: const Duration(milliseconds: 600),
           curve: Curves.easeOut,
-          builder: (_, value, __) => Text(
+          builder: (_, value, _) => Text(
             '${value.floor()}${kpi.suffix}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: narrow ? 25 : 28,
+              fontSize: narrow ? 24 : 28,
               fontWeight: FontWeight.w700,
-              height: 1.05,
+              height: 1.0,
               color: DashboardTheme.textPrimary,
             ),
           ),
         ),
         if (kpi.sub != null) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             kpi.sub!,
             maxLines: 1,
@@ -67,42 +67,26 @@ class DashboardKpiCard extends StatelessWidget {
             ),
           ),
         ],
-        if (kpi.delta != null) ...[
-          const SizedBox(height: 5),
-          Text(
-            kpi.delta!,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: DashboardTheme.green,
-            ),
-          ),
-        ],
       ],
     );
 
     return Container(
-      constraints: BoxConstraints(minHeight: narrow ? 150 : 120),
-      padding: EdgeInsets.all(narrow ? 12 : 18),
+      padding: EdgeInsets.symmetric(
+        horizontal: narrow ? 14 : 20,
+        vertical: narrow ? 14 : 18,
+      ),
       decoration: BoxDecoration(
         color: DashboardTheme.bgCard,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: DashboardTheme.border),
       ),
-      child: narrow
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [icon, const SizedBox(height: 10), details],
-            )
-          : Row(
-              children: [
-                icon,
-                const SizedBox(width: 14),
-                Expanded(child: details),
-              ],
-            ),
+      child: Row(
+        children: [
+          icon,
+          SizedBox(width: narrow ? 10 : 14),
+          Expanded(child: details),
+        ],
+      ),
     );
   }
 }

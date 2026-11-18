@@ -4,61 +4,167 @@ import 'dashboard_kpi_card.dart';
 import 'dashboard_models.dart';
 import 'dashboard_theme.dart';
 
-/// Cuadrícula de tarjetas KPI. [width] es el ancho disponible del contenido.
+/// Cuadrícula de las 4 tarjetas KPI reales (`deportistas_activos`, `eventos_proximos.length`,
+/// `equipos_activos` y `analisis_pendientes`).
 class DashboardKpis extends StatelessWidget {
   final double width;
-  final int sessionCount;
+  final EntrenadorDashboardData? data;
+  final bool loading;
+  final String? error;
+  final VoidCallback onRetry;
 
   const DashboardKpis({
     super.key,
     required this.width,
-    required this.sessionCount,
+    required this.data,
+    required this.loading,
+    required this.error,
+    required this.onRetry,
   });
 
   @override
   Widget build(BuildContext context) {
     final w = width;
+    final cols = w < 760 ? 2 : 4;
+    final gap = w < 760 ? 12.0 : 16.0;
+    final itemW = ((w - gap * (cols - 1)) / cols).clamp(0.0, w).toDouble();
+    final compactCards = w < 760;
+
+    if (error != null && data == null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: DashboardTheme.bgCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: DashboardTheme.red.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: DashboardTheme.red,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                error!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: DashboardTheme.textPrimary,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: onRetry,
+              child: const Text(
+                'Reintentar',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: DashboardTheme.blue,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (loading && data == null) {
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: List.generate(
+          4,
+          (_) => SizedBox(
+            width: itemW,
+            child: Container(
+              height: compactCards ? 86 : 96,
+              padding: EdgeInsets.all(compactCards ? 14 : 18),
+              decoration: BoxDecoration(
+                color: DashboardTheme.bgCard,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: DashboardTheme.border),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: compactCards ? 38 : 44,
+                    height: compactCards ? 38 : 44,
+                    decoration: BoxDecoration(
+                      color: DashboardTheme.bgCardHover,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 10,
+                          width: 90,
+                          decoration: BoxDecoration(
+                            color: DashboardTheme.bgCardHover,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          height: 22,
+                          width: 48,
+                          decoration: BoxDecoration(
+                            color: DashboardTheme.bgCardHover,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     final kpis = [
-      const DashboardKpi(
-        Color(0xFF4F6EF7),
+      DashboardKpi(
+        DashboardTheme.blue,
         '👥',
-        'Total Deportistas',
-        24,
+        'Deportistas Activos',
+        data?.deportistasActivos ?? 0,
         '',
-        sub: 'Activos',
+        sub: 'En tus equipos',
       ),
       DashboardKpi(
         DashboardTheme.teal,
-        '✅',
-        'Sesiones esta semana',
-        sessionCount,
+        '📅',
+        'Eventos (Próx. 7 días)',
+        data?.eventosProximos.length ?? 0,
         '',
-        sub: 'Completadas',
+        sub: 'Sesiones programadas',
       ),
-      const DashboardKpi(
+      DashboardKpi(
         DashboardTheme.green,
-        '⏱',
-        'Asistencia promedio',
-        87,
-        '%',
-        delta: '▲ +5% vs semana pasada',
+        '🏐',
+        'Equipos Activos',
+        data?.equiposActivos ?? 0,
+        '',
+        sub: 'Bajo tu dirección',
       ),
-      const DashboardKpi(
+      DashboardKpi(
         DashboardTheme.gold,
-        '📈',
-        'Rendimiento promedio',
-        78,
-        '%',
-        delta: '▲ +8% vs semana pasada',
+        '📹',
+        'Análisis Pendientes',
+        data?.analisisPendientes ?? 0,
+        '',
+        sub: 'Por revisar en IA',
       ),
     ];
-
-    // Se decide la cuadrícula por el ancho disponible, no el de todo el dispositivo.
-    final cols = w < 600 ? 2 : (w < 1000 ? 3 : 4);
-    final gap = w < 600 ? 12.0 : 16.0;
-    final itemW = ((w - gap * (cols - 1)) / cols).clamp(0.0, w).toDouble();
-    final compactCards = itemW < 220;
 
     return Wrap(
       spacing: gap,
