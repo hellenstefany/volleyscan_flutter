@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:volleyscan_mobile/models/profile_data.dart';
+import 'package:volleyscan_mobile/services/api_service.dart';
+import 'package:volleyscan_mobile/theme/app_theme.dart';
+import 'package:volleyscan_mobile/theme/dash_colors.dart';
 import 'package:volleyscan_mobile/widgets/entrenador/dashboard/dashboard_activity_list.dart';
 import 'package:volleyscan_mobile/widgets/entrenador/dashboard/dashboard_chart.dart';
 import 'package:volleyscan_mobile/widgets/entrenador/dashboard/dashboard_kpis.dart';
@@ -10,7 +14,7 @@ import 'package:volleyscan_mobile/widgets/entrenador/dashboard/dashboard_session
 import 'package:volleyscan_mobile/widgets/entrenador/dashboard/dashboard_theme.dart';
 import 'package:volleyscan_mobile/widgets/entrenador/dashboard/dashboard_topbar.dart';
 
-// Nota: se llama DashboardScreen para coincidir con el shell
+// Nota: se llama DashboardScreen para coincidir con EntrenadorShell
 // (que la importa con `as entrenador`).
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -20,153 +24,209 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  List<DashboardActivity> _activities = List.of(dashboardInitialActivities);
-  int _sessionCount = 15;
-  String _dateLabel = 'Fechas';
+  ProfileData? _entrenador;
+  bool _loadingUser = true;
 
-  void _toast(String msg) {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(milliseconds: 2800),
-        backgroundColor: DashboardTheme.bgCard,
-        margin: const EdgeInsets.all(20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: DashboardTheme.green),
-        ),
-        content: Row(
-          children: [
-            const Text(
-              '✓',
-              style: TextStyle(color: DashboardTheme.green, fontSize: 16),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                msg,
-                style: const TextStyle(
-                  color: DashboardTheme.textPrimary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  EntrenadorDashboardData? _data;
+  bool _loadingDashboard = true;
+  String? _errorDashboard;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarTodo();
   }
 
-  String _nowLabel() {
-    final now = DateTime.now();
-    final h12 = now.hour % 12 == 0 ? 12 : now.hour % 12;
-    final mm = now.minute.toString().padLeft(2, '0');
-    final ampm = now.hour >= 12 ? 'PM' : 'AM';
-    return 'Hoy, ${h12.toString().padLeft(2, '0')}:$mm $ampm';
+  Future<void> _cargarTodo() async {
+    final guardado = await ApiService.getUsuario();
+    if (mounted && guardado != null) {
+      setState(() => _entrenador = ProfileData.fromJson(guardado));
+    }
+
+    await Future.wait([
+      _cargarEntrenador(),
+      _cargarDashboard(),
+    ]);
+  }
+
+  Future<void> _cargarEntrenador() async {
+    if (mounted) setState(() => _loadingUser = true);
+    try {
+      final raw = await ApiService().me();
+      if (!mounted) return;
+      setState(() {
+        _entrenador = ProfileData.fromJson(raw);
+        _loadingUser = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingUser = false);
+    }
+  }
+
+  Future<void> _cargarDashboard() async {
+    if (mounted) {
+      setState(() {
+        _loadingDashboard = true;
+        _errorDashboard = null;
+      });
+    }
+    try {
+      final res = await ApiService().dashboardEntrenador();
+      if (!mounted) return;
+      setState(() {
+        _data = res;
+        _loadingDashboard = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      if (e.isUnauthorized) return; // ApiService ya redirige a LoginScreen
+      const fallbackMsg = 'No se pudo cargar el resumen del dashboard';
+      final msg = e.message.isNotEmpty ? e.message : fallbackMsg;
+      setState(() {
+        _errorDashboard = msg;
+        _loadingDashboard = false;
+      });
+      showAppToast(context, fallbackMsg, type: 'error');
+    } catch (_) {
+      if (!mounted) return;
+      const msg = 'No se pudo cargar el resumen del dashboard';
+      setState(() {
+        _errorDashboard = msg;
+        _loadingDashboard = false;
+      });
+      showAppToast(context, msg, type: 'error');
+    }
+  }
+
+  String? get _nombreCompleto {
+    final u = _entrenador;
+    if (u == null) return null;
+    final full = [u.nombre.trim(), u.apellido.trim()]
+        .where((s) => s.isNotEmpty)
+        .join(' ');
+    return full.isNotEmpty ? full : null;
   }
 
   Future<void> _openNewSession() async {
-    final type = await showDialog<String>(
+    final createdTitle = await showDialog<String>(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.7),
+      barrierColor: DashColors.modalOverlay,
       builder: (_) => const DashboardSessionDialog(),
     );
-    if (type == null) return;
+    if (createdTitle == null || !mounted) return;
 
-    setState(() {
-      _activities = [
-        DashboardActivity(
-          'Nueva sesión',
-          type,
-          _nowLabel(),
-          '📹',
-          const Color(0xFF312E81),
-          icon: true,
-        ),
-        ..._activities.take(3),
-      ];
-      _sessionCount++;
-    });
-
-    _toast('Sesión "$type" creada exitosamente');
+    showAppToast(
+      context,
+      'Sesión "$createdTitle" guardada en tu horario',
+      type: 'success',
+    );
+    await _cargarDashboard();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Se usa el ancho DISPONIBLE (no el de toda la ventana): así el título
-    // deja espacio al botón del menú cuando el contenido se ve angosto.
     return LayoutBuilder(
       builder: (context, box) => _buildBody(box.maxWidth < 760),
     );
   }
 
   Widget _buildBody(bool narrow) {
+    final partidos =
+        _data?.ultimosPartidos ?? const <EntrenadorUltimoPartido>[];
+    final eventos = _data?.eventosProximos ?? const <EntrenadorEventoProximo>[];
+
     return Material(
       color: DashboardTheme.bgSecondary,
       child: Column(
         children: [
           DashboardTopbar(
             narrow: narrow,
-            dateLabel: _dateLabel,
-            onDateSelected: (d) {
-              setState(() => _dateLabel = d);
-              _toast('Período: $d');
-            },
+            nombreCompleto: _nombreCompleto,
+            email: _entrenador?.email,
+            loadingUser: _loadingUser,
             onNewSession: _openNewSession,
           ),
           Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(narrow ? 16 : 28),
-              child: LayoutBuilder(
-                builder: (context, c) {
-                  final w = c.maxWidth;
-                  final threeCols = w >= 1000;
+            child: RefreshIndicator(
+              color: DashboardTheme.blue,
+              backgroundColor: DashboardTheme.bgCard,
+              onRefresh: _cargarTodo,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.all(narrow ? 16 : 28),
+                child: LayoutBuilder(
+                  builder: (context, c) {
+                    final w = c.maxWidth;
+                    final threeCols = w >= 1000;
 
-                  final chartPanel = DashboardPanel(
-                    title: 'Rendimiento por semana',
-                    child: DashboardChart(narrow: narrow),
-                  );
-                  final playersPanel = DashboardPanel(
-                    title: 'Comparativa de jugadores',
-                    child: DashboardPlayersList(
-                      onPlayerTap: (p) =>
-                          _toast('Ver estadísticas de ${p.name}'),
-                    ),
-                  );
-                  final activityPanel = DashboardPanel(
-                    title: 'Actividad reciente',
-                    child: DashboardActivityList(activities: _activities),
-                  );
+                    final chartPanel = DashboardPanel(
+                      title: 'Efectividad en últimos partidos (% Sets)',
+                      child: DashboardChart(
+                        narrow: narrow,
+                        partidos: partidos,
+                        loading: _loadingDashboard,
+                        error: _errorDashboard,
+                        onRetry: _cargarDashboard,
+                      ),
+                    );
+                    final matchesPanel = DashboardPanel(
+                      title: 'Últimos partidos',
+                      child: DashboardPlayersList(
+                        partidos: partidos,
+                        loading: _loadingDashboard,
+                        error: _errorDashboard,
+                        onRetry: _cargarDashboard,
+                        onPartidoTap: (p) => showAppToast(
+                          context,
+                          'Partido vs ${p.rival}: ${p.setsGanados}-${p.setsPerdidos}',
+                          type: 'success',
+                        ),
+                      ),
+                    );
+                    final eventsPanel = DashboardPanel(
+                      title: 'Próximos eventos (7 días)',
+                      child: DashboardActivityList(
+                        eventos: eventos,
+                        loading: _loadingDashboard,
+                        error: _errorDashboard,
+                        onRetry: _cargarDashboard,
+                      ),
+                    );
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      DashboardKpis(width: w, sessionCount: _sessionCount),
-                      SizedBox(height: narrow ? 16 : 22),
-                      if (threeCols)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(child: chartPanel),
-                            const SizedBox(width: 16),
-                            Expanded(child: playersPanel),
-                            const SizedBox(width: 16),
-                            Expanded(child: activityPanel),
-                          ],
-                        )
-                      else ...[
-                        chartPanel,
-                        const SizedBox(height: 14),
-                        playersPanel,
-                        const SizedBox(height: 14),
-                        activityPanel,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        DashboardKpis(
+                          width: w,
+                          data: _data,
+                          loading: _loadingDashboard,
+                          error: _errorDashboard,
+                          onRetry: _cargarDashboard,
+                        ),
+                        SizedBox(height: narrow ? 16 : 22),
+                        if (threeCols)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: chartPanel),
+                              const SizedBox(width: 16),
+                              Expanded(child: matchesPanel),
+                              const SizedBox(width: 16),
+                              Expanded(child: eventsPanel),
+                            ],
+                          )
+                        else ...[
+                          chartPanel,
+                          const SizedBox(height: 14),
+                          matchesPanel,
+                          const SizedBox(height: 14),
+                          eventsPanel,
+                        ],
                       ],
-                    ],
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ),

@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
-import 'dashboard_models.dart';
 import 'dashboard_theme.dart';
 
-/// Selector de período (menú desplegable).
+/// Selector de período (preservado sin opciones hardcodeadas ni colores nuevos).
 class DashboardDatePicker extends StatelessWidget {
   final String label;
   final ValueChanged<String> onSelected;
+  final List<String> options;
 
   const DashboardDatePicker({
     super.key,
     required this.label,
     required this.onSelected,
+    this.options = const [],
   });
 
   @override
@@ -24,7 +25,7 @@ class DashboardDatePicker extends StatelessWidget {
         side: const BorderSide(color: DashboardTheme.border),
       ),
       onSelected: onSelected,
-      itemBuilder: (_) => dashboardDateOptions
+      itemBuilder: (_) => options
           .map(
             (d) => PopupMenuItem(
               value: d,

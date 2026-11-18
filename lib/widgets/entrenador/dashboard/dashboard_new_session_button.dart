@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/app_theme.dart';
 import 'dashboard_theme.dart';
 
 class DashboardNewSessionButton extends StatelessWidget {
@@ -13,15 +14,11 @@ class DashboardNewSessionButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [DashboardTheme.purple, Color(0xFF5B21B6)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: AppGradients.sidebarLogoIcon,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: DashboardTheme.purple.withOpacity(0.35),
+              color: DashboardTheme.purple.withValues(alpha: 0.35),
               blurRadius: 15,
               offset: const Offset(0, 4),
             ),
