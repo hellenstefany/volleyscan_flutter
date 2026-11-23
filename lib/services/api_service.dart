@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/coach_link_data.dart';
+import '../models/equipo.dart';
 import '../models/my_level_data.dart';
 import '../models/my_matches_data.dart';
 import '../models/my_teams_data.dart';
@@ -1101,6 +1102,138 @@ class ApiService {
       statusCode: 0,
       message: 'No se pudo actualizar la revisión.',
     );
+  }
+
+  // ---------- Equipos del Entrenador (/api/ia/equipos/...) ----------
+
+  /// Lista los equipos activos del entrenador (`GET /api/ia/equipos`).
+  Future<List<Equipo>> listarEquiposEntrenador() async {
+    final data = await get('/ia/equipos');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((m) => Equipo.fromJson(Map<String, dynamic>.from(m)))
+          .toList();
+    }
+    return const <Equipo>[];
+  }
+
+  /// Crea un equipo nuevo (`POST /api/ia/equipos`) y devuelve su `id`.
+  Future<int> crearEquipoEntrenador({
+    required String nombre,
+    String? categoria,
+    String? temporada,
+  }) async {
+    final data = await post('/ia/equipos', {
+      'nombre': nombre.trim(),
+      'categoria': categoria?.trim() ?? '',
+      'temporada': temporada?.trim() ?? '',
+    });
+    if (data is Map && data['id'] != null) {
+      return int.tryParse(data['id'].toString()) ?? 0;
+    }
+    return 0;
+  }
+
+  /// Obtiene el detalle completo de un equipo (`GET /api/ia/equipos/<id>`).
+  Future<EquipoDetalle> detalleEquipoEntrenador(int equipoId) async {
+    final data = await get('/ia/equipos/$equipoId');
+    if (data is Map) {
+      return EquipoDetalle.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo cargar el detalle del equipo.',
+    );
+  }
+
+  /// Edita los datos de un equipo (`PUT /api/ia/equipos/<id>`).
+  Future<void> editarEquipoEntrenador(
+    int equipoId, {
+    required String nombre,
+    String? categoria,
+    String? temporada,
+  }) async {
+    await put('/ia/equipos/$equipoId', {
+      'nombre': nombre.trim(),
+      'categoria': categoria?.trim() ?? '',
+      'temporada': temporada?.trim() ?? '',
+    });
+  }
+
+  /// Archiva un equipo (`DELETE /api/ia/equipos/<id>`, solo propietario).
+  Future<void> archivarEquipoEntrenador(int equipoId) async {
+    await delete('/ia/equipos/$equipoId');
+  }
+
+  /// Envía una invitación por correo para unirse al equipo
+  /// (`POST /api/ia/equipos/<id>/invitaciones`, `tipo`: `'deportista'` | `'entrenador'`).
+  Future<EquipoInvitacionCreada> invitarMiembroEquipo(
+    int equipoId, {
+    required String tipo,
+    required String email,
+  }) async {
+    final data = await post('/ia/equipos/$equipoId/invitaciones', {
+      'tipo': tipo,
+      'email': email.trim(),
+    });
+    if (data is Map) {
+      return EquipoInvitacionCreada.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'Respuesta inesperada al crear la invitación.',
+    );
+  }
+
+  /// Reenvía una invitación pendiente generando un nuevo enlace
+  /// (`POST /api/ia/equipos/<id>/invitaciones/<invId>/reenviar`).
+  Future<EquipoInvitacionCreada> reenviarInvitacionEquipo(
+    int equipoId,
+    int invitacionId,
+  ) async {
+    final data = await post(
+      '/ia/equipos/$equipoId/invitaciones/$invitacionId/reenviar',
+      const <String, dynamic>{},
+    );
+    if (data is Map) {
+      return EquipoInvitacionCreada.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'Respuesta inesperada al reenviar la invitación.',
+    );
+  }
+
+  /// Revoca (cancela) una invitación pendiente
+  /// (`DELETE /api/ia/equipos/<id>/invitaciones/<invId>`).
+  Future<void> revocarInvitacionEquipo(int equipoId, int invitacionId) async {
+    await delete('/ia/equipos/$equipoId/invitaciones/$invitacionId');
+  }
+
+  /// Edita la posición y número de camiseta de un deportista en el equipo
+  /// (`PUT /api/ia/equipos/<id>/deportistas/<atletaId>`).
+  Future<void> editarDeportistaEquipo(
+    int equipoId,
+    int atletaId, {
+    String? posicion,
+    int? numeroCamiseta,
+  }) async {
+    await put('/ia/equipos/$equipoId/deportistas/$atletaId', {
+      'posicion': posicion?.trim() ?? '',
+      'numeroCamiseta': numeroCamiseta,
+    });
+  }
+
+  /// Saca a un deportista del equipo (`DELETE /api/ia/equipos/<id>/deportistas/<atletaId>`).
+  Future<void> quitarDeportistaEquipo(int equipoId, int atletaId) async {
+    await delete('/ia/equipos/$equipoId/deportistas/$atletaId');
+  }
+
+  /// Quita a un co-entrenador del equipo o permite salir si `soyYo`
+  /// (`DELETE /api/ia/equipos/<id>/entrenadores/<entrenadorId>`).
+  Future<void> quitarEntrenadorEquipo(int equipoId, int entrenadorId) async {
+    await delete('/ia/equipos/$equipoId/entrenadores/$entrenadorId');
   }
 
   // ---------- Chat IA (Microservicio :8010) ----------
