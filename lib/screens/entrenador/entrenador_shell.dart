@@ -11,6 +11,7 @@ import 'horario_screen.dart';
 import 'partidos_screen.dart';
 import 'estadisticas_screen.dart';
 import 'rutinas_screen.dart';
+import 'registro_rutinas_screen.dart';
 import 'reportes_screen.dart';
 import 'analisis_screen.dart';
 import 'configuracion_screen.dart';
@@ -28,9 +29,7 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   late String _selectedId = widget.initialId;
 
-  static const _pendientes = <String, String>{
-    'registro_rutinas': 'Registro de rutinas',
-  };
+  static const _pendientes = <String, String>{};
 
   Widget _page() {
     switch (_selectedId) {
@@ -50,6 +49,8 @@ class _EntrenadorShellState extends State<EntrenadorShell> {
         return const EstadisticasScreen();
       case 'rutinas':
         return const RutinasScreen();
+      case 'registro_rutinas':
+        return const RegistroRutinasScreen();
       case 'reportes':
         return const ReportesScreen();
       case 'analisis':
