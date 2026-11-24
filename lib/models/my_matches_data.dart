@@ -1,3 +1,5 @@
+export 'partido_entrenador_data.dart';
+
 /// Modelos de la pantalla "Mis partidos" (`/usuario/partidos`) alineados con
 /// `VolleyScan_Next/src/app/usuario/partidos/page.jsx` y
 /// `Backend_VolleyScan/vinculos/partidos.py`.
@@ -49,16 +51,25 @@ class MatchStats {
       efectividadRecepcion: _toInt(json['efectividadRecepcion']),
     );
   }
+
+  int statByKey(String key) => switch (key) {
+        'ataquesExitosos' => ataquesExitosos,
+        'ataquesFallidos' => ataquesFallidos,
+        'bloqueos' => bloqueos,
+        'saquesExitosos' => saquesExitosos,
+        'saquesFallidos' => saquesFallidos,
+        'recepcionesExitosas' => recepcionesExitosas,
+        'recepcionesFalladas' => recepcionesFalladas,
+        'erroresNoForzados' => erroresNoForzados,
+        _ => 0,
+      };
 }
 
 class MatchAccumulated {
   final int partidos;
   final MatchStats stats;
 
-  const MatchAccumulated({
-    required this.partidos,
-    required this.stats,
-  });
+  const MatchAccumulated({required this.partidos, required this.stats});
 
   factory MatchAccumulated.fromJson(Map<String, dynamic> json) {
     return MatchAccumulated(

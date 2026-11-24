@@ -1309,6 +1309,77 @@ class ApiService {
     );
   }
 
+  // ---------- Partidos del Entrenador (/api/ia/partidos...) ----------
+
+  /// Lista los partidos registrados de los equipos del entrenador y su resumen
+  /// (`GET /api/ia/partidos` o `GET /api/ia/partidos?equipo=<id>`).
+  Future<CoachMatchesListResponse> listarPartidosEntrenador({
+    int? equipoId,
+  }) async {
+    final suffix = equipoId != null ? '?equipo=$equipoId' : '';
+    final data = await get('/ia/partidos$suffix');
+    if (data is Map) {
+      return CoachMatchesListResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const CoachMatchesListResponse();
+  }
+
+  /// Obtiene el detalle de un partido con estadísticas por jugador y totales
+  /// (`GET /api/ia/partidos/<id>`).
+  Future<CoachMatchDetail> detallePartidoEntrenador(int partidoId) async {
+    final data = await get('/ia/partidos/$partidoId');
+    if (data is Map) {
+      return CoachMatchDetail.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo cargar el detalle del partido.',
+    );
+  }
+
+  /// Obtiene la plantilla de un equipo para el formulario de partido:
+  /// deportistas activos y eventos de tipo Competencia sin partido ligado
+  /// (`GET /api/ia/partidos/equipo/<equipoId>/plantilla`).
+  Future<CoachMatchTemplate> plantillaPartidoEntrenador(int equipoId) async {
+    final data = await get('/ia/partidos/equipo/$equipoId/plantilla');
+    if (data is Map) {
+      return CoachMatchTemplate.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo cargar la plantilla del equipo.',
+    );
+  }
+
+  /// Registra un partido nuevo (`POST /api/ia/partidos`) y devuelve su `id`.
+  Future<int> crearPartidoEntrenador(Map<String, dynamic> datos) async {
+    final data = await post('/ia/partidos', datos);
+    if (data is Map && data['id'] != null) {
+      return int.tryParse(data['id'].toString()) ?? 0;
+    }
+    return 0;
+  }
+
+  /// Edita un partido existente (`PUT /api/ia/partidos/<id>`).
+  Future<CoachMatchDetail> editarPartidoEntrenador(
+    int partidoId,
+    Map<String, dynamic> datos,
+  ) async {
+    final data = await put('/ia/partidos/$partidoId', datos);
+    if (data is Map) {
+      return CoachMatchDetail.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo actualizar el partido.',
+    );
+  }
+
+  /// Elimina un partido y sus estadísticas (`DELETE /api/ia/partidos/<id>`).
+  Future<void> borrarPartidoEntrenador(int partidoId) async {
+    await delete('/ia/partidos/$partidoId');
+  }
+
   // ---------- Chat IA (Microservicio :8010) ----------
 
   /// Envía una consulta al entrenador virtual (`POST $aiBaseUrl/chat`).
