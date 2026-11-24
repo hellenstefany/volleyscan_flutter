@@ -22,6 +22,7 @@ import '../models/device_data.dart';
 import '../models/preferences_data.dart';
 import '../models/profile_data.dart';
 import '../models/progreso_atleta_data.dart';
+import '../models/registro_rutina_data.dart';
 import '../models/rutina_entrenador_data.dart';
 import '../widgets/entrenador/dashboard/dashboard_models.dart';
 import '../widgets/entrenador/gestion/gestion_athlete.dart';
@@ -1447,6 +1448,129 @@ class ApiService {
   /// Elimina una rutina asignada (`DELETE /api/ia/rutinas/entrenador/<id>`).
   Future<void> eliminarRutinaEntrenador(int rutinaId) async {
     await delete('/ia/rutinas/entrenador/$rutinaId');
+  }
+
+  // ---------- Registro de Rutinas y Niveles (/api/ia/registro-rutinas, /niveles) ----------
+
+  /// Lista el registro de rutinas completadas por los deportistas del entrenador
+  /// (`GET /api/ia/registro-rutinas`).
+  Future<RegistroRutinasResponse> registroRutinasEntrenador({
+    String estado = 'todas',
+    int? atletaId,
+    int? equipoId,
+    String? desde,
+    String? hasta,
+  }) async {
+    final tz = -DateTime.now().timeZoneOffset.inMinutes;
+    final params = <String, String>{
+      'estado': estado,
+      'tz': '$tz',
+      if (atletaId != null) 'atleta': '$atletaId',
+      if (equipoId != null) 'equipo': '$equipoId',
+      if (desde != null && desde.isNotEmpty) 'desde': desde,
+      if (hasta != null && hasta.isNotEmpty) 'hasta': hasta,
+    };
+    final qs = Uri(queryParameters: params).query;
+    final data = await get('/ia/registro-rutinas?$qs');
+    if (data is Map) {
+      return RegistroRutinasResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const RegistroRutinasResponse();
+  }
+
+  /// Obtiene el detalle de una rutina completada (`GET /api/ia/registro-rutinas/<id>`).
+  Future<RegistroRutinaItem> detalleRegistroRutinaEntrenador(
+    int rutinaId,
+  ) async {
+    final tz = -DateTime.now().timeZoneOffset.inMinutes;
+    final data = await get('/ia/registro-rutinas/$rutinaId?tz=$tz');
+    if (data is Map) {
+      return RegistroRutinaItem.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo cargar el detalle de la rutina.',
+    );
+  }
+
+  /// Crea o actualiza la revisión de una rutina completada
+  /// (`PUT /api/ia/registro-rutinas/<id>/revision`).
+  Future<RegistroRutinaItem> revisarRutinaEntrenador(
+    int rutinaId, {
+    required int calificacion,
+    String? comentario,
+    String? notaPrivada,
+  }) async {
+    final tz = -DateTime.now().timeZoneOffset.inMinutes;
+    final data = await put('/ia/registro-rutinas/$rutinaId/revision?tz=$tz', {
+      'calificacion': calificacion,
+      'comentario': comentario,
+      'notaPrivada': notaPrivada,
+    });
+    if (data is Map) {
+      return RegistroRutinaItem.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo guardar la revisión.',
+    );
+  }
+
+  /// Lista los deportistas con su nivel y avance hacia el siguiente
+  /// (`GET /api/ia/niveles/deportistas`).
+  Future<List<DeportistaNivelResumen>> nivelesDeportistasEntrenador({
+    int? equipoId,
+  }) async {
+    final tz = -DateTime.now().timeZoneOffset.inMinutes;
+    final eq = equipoId != null ? '&equipo=$equipoId' : '';
+    final data = await get('/ia/niveles/deportistas?tz=$tz$eq');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map(
+            (m) => DeportistaNivelResumen.fromJson(
+              Map<String, dynamic>.from(m),
+            ),
+          )
+          .toList();
+    }
+    return const <DeportistaNivelResumen>[];
+  }
+
+  /// Obtiene el detalle e historial de niveles de un deportista
+  /// (`GET /api/ia/niveles/deportistas/<atletaId>`).
+  Future<DeportistaNivelDetalle> nivelDeDeportistaEntrenador(
+    int atletaId,
+  ) async {
+    final tz = -DateTime.now().timeZoneOffset.inMinutes;
+    final data = await get('/ia/niveles/deportistas/$atletaId?tz=$tz');
+    if (data is Map) {
+      return DeportistaNivelDetalle.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo cargar el nivel del deportista.',
+    );
+  }
+
+  /// Cambia el nivel de un deportista (`PUT /api/ia/niveles/deportistas/<atletaId>`).
+  Future<DeportistaNivelDetalle> cambiarNivelDeportistaEntrenador(
+    int atletaId, {
+    required String nivel,
+    String? motivo,
+  }) async {
+    final tz = -DateTime.now().timeZoneOffset.inMinutes;
+    final data = await put('/ia/niveles/deportistas/$atletaId?tz=$tz', {
+      'nivel': nivel,
+      'motivo': motivo,
+    });
+    if (data is Map) {
+      return DeportistaNivelDetalle.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo actualizar el nivel.',
+    );
   }
 
   /// Envía una consulta al entrenador virtual (`POST $aiBaseUrl/chat`).
