@@ -1,4 +1,6 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../theme/dash_colors.dart';
 import 'horario_colors.dart';
 import 'horario_common_widgets.dart';
 import 'horario_model.dart';
@@ -6,9 +8,9 @@ import 'horario_model.dart';
 class WeekView extends StatelessWidget {
   final bool narrow;
   final DateTime current;
-  final List<Ev> events;
+  final List<CoachScheduleEvent> events;
   final void Function(DateTime day, int hour) onNewAt;
-  final ValueChanged<Ev> onEdit;
+  final ValueChanged<CoachScheduleEvent> onEdit;
 
   const WeekView({
     super.key,
@@ -51,32 +53,22 @@ class WeekView extends StatelessWidget {
               for (var i = 0; i < 7; i++)
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 6,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
                     decoration: BoxDecoration(
-                      border: i < 6
-                          ? const Border(right: BorderSide(color: HC.border))
-                          : null,
+                      border: i < 6 ? const Border(right: BorderSide(color: HC.border)) : null,
                     ),
                     child: Column(
                       children: [
                         Text(
                           kDayNames[i],
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: sameDay(days[i], today) ? HC.blue2 : HC.t3,
-                          ),
+                          style: TextStyle(fontSize: 10, color: sameDay(days[i], today) ? HC.blue2 : HC.t3),
                         ),
                         const SizedBox(height: 1),
                         Text(
                           '${days[i].day} ${kMonthShort[days[i].month - 1]}',
                           style: TextStyle(
                             fontSize: 13,
-                            fontWeight: sameDay(days[i], today)
-                                ? FontWeight.w800
-                                : FontWeight.w700,
+                            fontWeight: sameDay(days[i], today) ? FontWeight.w800 : FontWeight.w700,
                             color: sameDay(days[i], today) ? HC.blue2 : HC.t2,
                           ),
                         ),
@@ -101,17 +93,8 @@ class WeekView extends StatelessWidget {
                   height: kSlotH,
                   alignment: Alignment.topCenter,
                   padding: const EdgeInsets.only(top: 4),
-                  decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: HC.border)),
-                  ),
-                  child: Text(
-                    '${pad2(h)}:00',
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      fontFamily: 'monospace',
-                      color: HC.t3,
-                    ),
-                  ),
+                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: HC.border))),
+                  child: Text('${pad2(h)}:00', style: const TextStyle(fontSize: 10.5, fontFamily: 'monospace', color: HC.t3)),
                 ),
             ],
           ),
@@ -139,17 +122,14 @@ class WeekView extends StatelessWidget {
         );
 
         return scrolls
-            ? SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: content,
-              )
+            ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: content)
             : content;
       },
     );
   }
 
   Widget _dayColumn(DateTime day, {required bool last}) {
-    final evs = events.where((e) => sameDay(e.start, day) && e.start.hour >= 6);
+    final evs = eventsForDay(events, day);
 
     return Container(
       height: kHours.length * kSlotH,
@@ -170,78 +150,92 @@ class WeekView extends StatelessWidget {
                   for (final _ in kHours)
                     Container(
                       height: kSlotH,
-                      decoration: const BoxDecoration(
-                        border: Border(bottom: BorderSide(color: HC.border)),
-                      ),
+                      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: HC.border))),
                     ),
                 ],
               ),
             ),
           ),
           for (final ev in evs)
-            Positioned(
-              left: 3,
-              right: 3,
-              top:
-                  (ev.start.hour - 6) * kSlotH +
-                  (ev.start.minute / 60) * kSlotH,
-              height: ((ev.end.difference(ev.start).inMinutes / 60) * kSlotH)
-                  .clamp(42.0, double.infinity),
-              child: GestureDetector(
-                onTap: () => onEdit(ev),
-                child: EvBox(
-                  bg: evBg(ev.type),
-                  border: evBorder(ev.type),
-                  radius: 8,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
-                  ),
-                  child: ClipRect(
-                    child: OverflowBox(
-                      alignment: Alignment.topLeft,
-                      maxHeight: double.infinity,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            ev.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              height: 1.2,
-                              color: Colors.white,
+            Builder(
+              builder: (_) {
+                final fila = math.min(23, math.max(6, ev.start.hour));
+                final mismaFila = ev.start.hour == fila;
+                final top = (fila - 6) * kSlotH + (mismaFila ? (ev.start.minute / 60) * kSlotH : 0);
+                final durH = ev.end.difference(ev.start).inMinutes / 60.0;
+                final height = (durH * kSlotH).clamp(42.0, double.infinity);
+
+                return Positioned(
+                  left: 3,
+                  right: 3,
+                  top: top,
+                  height: height,
+                  child: Opacity(
+                    opacity: ev.isCancelled ? 0.45 : 1.0,
+                    child: GestureDetector(
+                      onTap: () => onEdit(ev),
+                      child: EvBox(
+                        bg: evBg(ev.tipo),
+                        border: evBorder(ev.tipo),
+                        radius: 8,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        child: ClipRect(
+                          child: OverflowBox(
+                            alignment: Alignment.topLeft,
+                            maxHeight: double.infinity,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  ev.titulo,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.2,
+                                    color: DashColors.textPrimary,
+                                    decoration: ev.isCancelled ? TextDecoration.lineThrough : null,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${ev.horaInicio} - ${ev.horaFin}',
+                                  style: const TextStyle(fontSize: 10, color: DashColors.textSecondary),
+                                ),
+                                if (ev.ubicacion.isNotEmpty)
+                                  Text(
+                                    ev.ubicacion,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 10, color: HC.t2),
+                                  ),
+                                if (ev.paraQuien.isNotEmpty)
+                                  Text(
+                                    ev.paraQuien.toUpperCase(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 9.5, letterSpacing: 0.4, color: HC.t2),
+                                  ),
+                                if (ev.asistenciaMarcada > 0)
+                                  Text(
+                                    '✓ Lista · ${ev.asistenciaMarcada}',
+                                    style: const TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: DashColors.successBadgeText,
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${fmtTime(ev.start)} - ${fmtTime(ev.end)}',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.white70,
-                            ),
-                          ),
-                          if (ev.place.isNotEmpty) ...[
-                            const SizedBox(height: 1),
-                            Text(
-                              ev.place,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.white54,
-                              ),
-                            ),
-                          ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
         ],
       ),

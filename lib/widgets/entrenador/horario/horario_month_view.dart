@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import '../../../theme/dash_colors.dart';
 import 'horario_colors.dart';
 import 'horario_common_widgets.dart';
 import 'horario_model.dart';
 
 class MonthView extends StatelessWidget {
   final DateTime current;
-  final List<Ev> events;
+  final List<CoachScheduleEvent> events;
   final ValueChanged<DateTime> onNew;
-  final ValueChanged<Ev> onEdit;
+  final ValueChanged<CoachScheduleEvent> onEdit;
 
   const MonthView({
     super.key,
@@ -77,7 +78,8 @@ class MonthView extends StatelessWidget {
   Widget _cell(DateTime date, int month, DateTime today) {
     final isToday = sameDay(date, today);
     final other = date.month != month;
-    final evs = eventsForDay(events, date).take(3).toList();
+    final delDia = eventsForDay(events, date);
+    final evs = delDia.take(3).toList();
 
     return Opacity(
       opacity: other ? 0.35 : 1,
@@ -109,31 +111,40 @@ class MonthView extends StatelessWidget {
                 for (final ev in evs)
                   Padding(
                     padding: const EdgeInsets.only(top: 3),
-                    child: GestureDetector(
-                      onTap: () => onEdit(ev),
-                      child: EvBox(
-                        bg: evBg(ev.type),
-                        border: evBorder(ev.type),
-                        radius: 4,
-                        width: 2,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 2,
-                        ),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: Text(
-                            '${fmtTime(ev.start)} ${ev.title.length > 12 ? '${ev.title.substring(0, 12)}...' : ev.title}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                    child: Opacity(
+                      opacity: ev.isCancelled ? 0.45 : 1.0,
+                      child: GestureDetector(
+                        onTap: () => onEdit(ev),
+                        child: EvBox(
+                          bg: evBg(ev.tipo),
+                          border: evBorder(ev.tipo),
+                          radius: 4,
+                          width: 2,
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: Text(
+                              '${ev.horaInicio} ${ev.titulo.length > 12 ? '${ev.titulo.substring(0, 12)}...' : ev.titulo}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: DashColors.textPrimary,
+                                decoration: ev.isCancelled ? TextDecoration.lineThrough : null,
+                              ),
                             ),
                           ),
                         ),
                       ),
+                    ),
+                  ),
+                if (delDia.length > 3)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      '+${delDia.length - 3} más',
+                      style: const TextStyle(fontSize: 10, color: HC.t2),
                     ),
                   ),
               ],
