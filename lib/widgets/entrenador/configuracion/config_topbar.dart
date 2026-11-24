@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/dash_colors.dart';
 import 'config_btn.dart';
 import 'config_theme.dart';
 
@@ -41,15 +42,15 @@ class ConfigTopbar extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7B731).withValues(alpha: 0.12),
+              color: DashColors.amber.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(99),
               border: Border.all(
-                color: const Color(0xFFF7B731).withValues(alpha: 0.35),
+                color: DashColors.amber.withValues(alpha: 0.35),
               ),
             ),
             child: const Text(
               'Cambios sin guardar',
-              style: TextStyle(fontSize: 11, color: Color(0xFFF7B731)),
+              style: TextStyle(fontSize: 11, color: DashColors.amber),
             ),
           ),
         ],

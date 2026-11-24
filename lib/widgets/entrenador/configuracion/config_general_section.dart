@@ -14,6 +14,7 @@ class ConfigGeneralSection extends StatelessWidget {
   final Map<String, dynamic> values;
   final ConfigSetter onSet;
   final VoidCallback onLogout;
+  final bool loggingOut;
 
   const ConfigGeneralSection({
     super.key,
@@ -21,6 +22,7 @@ class ConfigGeneralSection extends StatelessWidget {
     required this.values,
     required this.onSet,
     required this.onLogout,
+    this.loggingOut = false,
   });
 
   Widget _select(String key, List<String> options, {double w = 170}) {
@@ -105,10 +107,10 @@ class ConfigGeneralSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         ConfigBtn(
-          label: 'Cerrar sesión',
+          label: loggingOut ? 'Cerrando sesión…' : 'Cerrar sesión',
           style: ConfigBtnStyle.danger,
           expand: true,
-          onTap: onLogout,
+          onTap: loggingOut ? () {} : onLogout,
         ),
       ],
     );
