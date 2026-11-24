@@ -198,7 +198,10 @@ class _PartidoFormDialogState extends State<PartidoFormDialog> {
       insetPadding: const EdgeInsets.all(14),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: barSide),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 980, maxHeight: 760),
+        constraints: BoxConstraints(
+          maxWidth: 980,
+          maxHeight: math.min(760, MediaQuery.sizeOf(context).height * 0.9),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

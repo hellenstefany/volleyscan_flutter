@@ -1109,8 +1109,11 @@ class ApiService {
   /// Lista los equipos activos del entrenador (`GET /api/ia/equipos`).
   Future<List<Equipo>> listarEquiposEntrenador() async {
     final data = await get('/ia/equipos');
-    if (data is List) {
-      return data
+    final raw = data is List
+        ? data
+        : (data is Map && data['equipos'] is List ? data['equipos'] as List : null);
+    if (raw != null) {
+      return raw
           .whereType<Map>()
           .map((m) => Equipo.fromJson(Map<String, dynamic>.from(m)))
           .toList();

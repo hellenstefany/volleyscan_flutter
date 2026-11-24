@@ -23,7 +23,7 @@ class _PartidosScreenState extends State<PartidosScreen> {
   int? _equipoId;
   CoachMatchesListResponse? _datos;
 
-  bool _cargando = true, _abriendoDetalle = false;
+  bool _cargando = true, _cargandoEquipos = true, _abriendoDetalle = false;
   String _error = '', _aviso = '';
   int _reqToken = 0;
 
@@ -35,10 +35,22 @@ class _PartidosScreenState extends State<PartidosScreen> {
   }
 
   Future<void> _cargarEquipos() async {
+    if (mounted) setState(() => _cargandoEquipos = true);
     try {
       final list = await ApiService().listarEquiposEntrenador();
-      if (mounted) setState(() => _equipos = list);
-    } catch (_) {}
+      if (mounted) {
+        setState(() {
+          _equipos = list;
+          _cargandoEquipos = false;
+        });
+      }
+    } on ApiException catch (e) {
+      if (!mounted || e.isUnauthorized) return;
+      setState(() => _cargandoEquipos = false);
+      showAppToast(context, e.message, type: 'error');
+    } catch (_) {
+      if (mounted) setState(() => _cargandoEquipos = false);
+    }
   }
 
   Future<void> _cargarPartidos() async {
@@ -124,7 +136,18 @@ class _PartidosScreenState extends State<PartidosScreen> {
   }
 
   Future<void> _abrirFormulario([CoachMatchDetail? inicial]) async {
-    if (_equipos.isEmpty) return;
+    if (_equipos.isEmpty && _cargandoEquipos) {
+      await _cargarEquipos();
+    }
+    if (!mounted) return;
+    if (_equipos.isEmpty) {
+      showAppToast(
+        context,
+        'Primero debes crear un equipo activo para registrar partidos',
+        type: 'info',
+      );
+      return;
+    }
     final msg = await showDialog<String>(
       context: context,
       barrierColor: DashColors.modalOverlay,
@@ -238,7 +261,11 @@ class _PartidosScreenState extends State<PartidosScreen> {
               ),
             ),
           ),
-        EquipoPrimButton(label: '+ Registrar partido', enabled: _equipos.isNotEmpty, onTap: () => _abrirFormulario()),
+        EquipoPrimButton(
+          label: '+ Registrar partido',
+          enabled: !_cargandoEquipos,
+          onTap: () => _abrirFormulario(),
+        ),
       ],
     );
 

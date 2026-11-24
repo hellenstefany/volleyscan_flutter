@@ -157,127 +157,122 @@ class PartidoFormTopFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: partidoFieldLabel(
-                'Equipo',
-                DropdownButtonFormField<int>(
-                  initialValue:
-                      equipos.any((e) => e.id == equipoId) ? equipoId : null,
-                  isExpanded: true,
-                  dropdownColor: DashColors.cardDark,
-                  style: const TextStyle(color: DashColors.text1, fontSize: 13.5),
-                  decoration: partidoInputDeco(),
-                  items: [
-                    for (final e in equipos)
-                      DropdownMenuItem(
-                        value: e.id,
-                        child: Text(e.nombre, overflow: TextOverflow.ellipsis),
-                      ),
-                  ],
-                  onChanged: (editando || guardando)
-                      ? null
-                      : (v) {
-                          if (v != null && v != equipoId) onEquipoChanged(v);
-                        },
-                ),
-              ),
+    final equipoDrop = partidoFieldLabel(
+      'Equipo',
+      DropdownButtonFormField<int>(
+        initialValue: equipos.any((e) => e.id == equipoId) ? equipoId : null,
+        isExpanded: true,
+        dropdownColor: DashColors.cardDark,
+        style: const TextStyle(color: DashColors.text1, fontSize: 13.5),
+        decoration: partidoInputDeco(),
+        items: [
+          for (final e in equipos)
+            DropdownMenuItem(
+              value: e.id,
+              child: Text(e.nombre, overflow: TextOverflow.ellipsis),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: partidoFieldLabel(
-                'Evento del Horario (opcional)',
-                DropdownButtonFormField<int?>(
-                  initialValue:
-                      evOpts.any((o) => o.value == horarioId) ? horarioId : null,
-                  isExpanded: true,
-                  dropdownColor: DashColors.cardDark,
-                  style: const TextStyle(color: DashColors.text1, fontSize: 13.5),
-                  decoration: partidoInputDeco(),
-                  items: evOpts,
-                  onChanged: guardando ? null : onEventoChanged,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: partidoFieldLabel(
-                'Rival',
-                TextField(
-                  controller: rivalCtrl,
-                  maxLength: 150,
-                  enabled: !guardando,
-                  style: const TextStyle(color: DashColors.text1, fontSize: 13.5),
-                  decoration: partidoInputDeco('Nombre del equipo rival'),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: partidoFieldLabel(
-                'Fecha',
-                InkWell(
-                  onTap: guardando ? null : onPickFecha,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                    decoration: BoxDecoration(
-                      color: DashColors.bg,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: DashColors.coachBorder),
-                    ),
-                    child: Text(
-                      fecha,
-                      style: const TextStyle(color: DashColors.text1, fontSize: 13.5),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: partidoFieldLabel(
-                'Sets (nosotros – rival)',
-                Row(
-                  children: [
-                    Expanded(child: _setDrop(setsG, onSetsGChanged)),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '–',
-                        style: TextStyle(
-                          color: DashColors.textMuted,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: _setDrop(setsP, onSetsPChanged)),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        partidoFieldLabel(
-          'Lugar',
-          TextField(
-            controller: lugarCtrl,
-            maxLength: 150,
-            enabled: !guardando,
-            style: const TextStyle(color: DashColors.text1, fontSize: 13.5),
-            decoration: partidoInputDeco('Cancha o coliseo'),
+        ],
+        onChanged: (editando || guardando)
+            ? null
+            : (v) {
+                if (v != null && v != equipoId) onEquipoChanged(v);
+              },
+      ),
+    );
+    final eventoDrop = partidoFieldLabel(
+      'Evento del Horario (opcional)',
+      DropdownButtonFormField<int?>(
+        initialValue: evOpts.any((o) => o.value == horarioId) ? horarioId : null,
+        isExpanded: true,
+        dropdownColor: DashColors.cardDark,
+        style: const TextStyle(color: DashColors.text1, fontSize: 13.5),
+        decoration: partidoInputDeco(),
+        items: evOpts,
+        onChanged: guardando ? null : onEventoChanged,
+      ),
+    );
+    final rivalField = partidoFieldLabel(
+      'Rival',
+      TextField(
+        controller: rivalCtrl,
+        maxLength: 150,
+        enabled: !guardando,
+        style: const TextStyle(color: DashColors.text1, fontSize: 13.5),
+        decoration: partidoInputDeco('Nombre del equipo rival'),
+      ),
+    );
+    final fechaField = partidoFieldLabel(
+      'Fecha',
+      InkWell(
+        onTap: guardando ? null : onPickFecha,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color: DashColors.bg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: DashColors.coachBorder),
           ),
+          child: Text(fecha, style: const TextStyle(color: DashColors.text1, fontSize: 13.5)),
         ),
-      ],
+      ),
+    );
+    final setsField = partidoFieldLabel(
+      'Sets (nosotros – rival)',
+      Row(
+        children: [
+          Expanded(child: _setDrop(setsG, onSetsGChanged)),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6),
+            child: Text('–', style: TextStyle(color: DashColors.textMuted, fontWeight: FontWeight.w700)),
+          ),
+          Expanded(child: _setDrop(setsP, onSetsPChanged)),
+        ],
+      ),
+    );
+    final lugarField = partidoFieldLabel(
+      'Lugar',
+      TextField(
+        controller: lugarCtrl,
+        maxLength: 150,
+        enabled: !guardando,
+        style: const TextStyle(color: DashColors.text1, fontSize: 13.5),
+        decoration: partidoInputDeco('Cancha o coliseo'),
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (_, c) {
+        final narrow = c.maxWidth < 560;
+        return Column(
+          children: [
+            if (narrow) ...[
+              equipoDrop,
+              const SizedBox(height: 12),
+              eventoDrop,
+              const SizedBox(height: 12),
+              rivalField,
+              const SizedBox(height: 12),
+              Row(children: [Expanded(child: fechaField), const SizedBox(width: 12), Expanded(child: setsField)]),
+            ] else ...[
+              Row(children: [Expanded(child: equipoDrop), const SizedBox(width: 12), Expanded(child: eventoDrop)]),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(flex: 2, child: rivalField),
+                  const SizedBox(width: 12),
+                  Expanded(child: fechaField),
+                  const SizedBox(width: 12),
+                  Expanded(child: setsField),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+            lugarField,
+          ],
+        );
+      },
     );
   }
 }
