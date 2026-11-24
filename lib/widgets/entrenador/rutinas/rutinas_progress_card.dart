@@ -1,61 +1,88 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'rutinas_colors.dart';
+import '../../../models/rutina_entrenador_data.dart';
+import '../../../theme/dash_colors.dart';
+import 'rutinas_catalog.dart';
 import 'rutinas_common_widgets.dart';
 
-/// Tarjeta "Progreso semanal" con anillos por tipo.
+/// Tarjeta "Progreso semanal" con anillos por tipo calculados desde `enSemana`.
 class RutinasProgressCard extends StatelessWidget {
-  const RutinasProgressCard({super.key});
+  final List<RutinaEntrenador> enSemana;
+
+  const RutinasProgressCard({super.key, required this.enSemana});
+
+  (int count, int pct) _anillo(String tipo) {
+    final rs = enSemana.where((r) => r.tipo == tipo).toList();
+    final total = rs.fold<int>(0, (acc, r) => acc + r.progreso.total);
+    final hechos = rs.fold<int>(0, (acc, r) => acc + r.progreso.completados);
+    final pct = total > 0 ? ((hechos * 100) / total).round() : 0;
+    return (rs.length, pct);
+  }
 
   @override
   Widget build(BuildContext context) {
-    const rings = [
-      ('Técnico', 75),
-      ('Físico', 60),
-      ('Táctico', 45),
-      ('Recuperación', 90),
-    ];
+    const tipos = ['Técnico', 'Físico', 'Táctico', 'Recuperación'];
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: rtBox(RtC.card, 14),
+      decoration: rtBox(DashColors.card, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const RtCardTitle(icon: '📊', title: 'Progreso semanal'),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 20,
-            runSpacing: 12,
-            children: [
-              for (final r in rings)
-                Column(
-                  children: [
-                    SizedBox(
-                      width: 70,
-                      height: 70,
-                      child: CustomPaint(
-                        painter: _RingPainter(r.$2 / 100, kTypeColors[r.$1]!),
-                        child: Center(
-                          child: Text(
-                            '${r.$2}%',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: kTypeColors[r.$1],
-                            ),
+          Center(
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 20,
+              runSpacing: 12,
+              children: [
+                for (final tipo in tipos)
+                  Builder(
+                    builder: (_) {
+                      final (n, pct) = _anillo(tipo);
+                      final color =
+                          kRutinaTypeColors[tipo] ?? DashColors.coachPurple;
+                      return Opacity(
+                        opacity: n > 0 ? 1.0 : 0.45,
+                        child: Tooltip(
+                          message: n > 0
+                              ? '$n rutina${n > 1 ? 's' : ''} esta semana'
+                              : 'Sin rutinas esta semana',
+                          child: Column(
+                            children: [
+                              SizedBox(
+                                width: 70,
+                                height: 70,
+                                child: CustomPaint(
+                                  painter: _RingPainter(pct / 100, color),
+                                  child: Center(
+                                    child: Text(
+                                      '$pct%',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: color,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                tipo,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: DashColors.textMuted,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      r.$1,
-                      style: const TextStyle(fontSize: 11, color: RtC.muted),
-                    ),
-                  ],
-                ),
-            ],
+                      );
+                    },
+                  ),
+              ],
+            ),
           ),
         ],
       ),
@@ -66,6 +93,7 @@ class RutinasProgressCard extends StatelessWidget {
 class _RingPainter extends CustomPainter {
   final double value;
   final Color color;
+
   _RingPainter(this.value, this.color);
 
   @override
@@ -85,7 +113,7 @@ class _RingPainter extends CustomPainter {
     canvas.drawArc(
       rect,
       -math.pi / 2,
-      math.pi * 2 * value,
+      math.pi * 2 * value.clamp(0.0, 1.0),
       false,
       Paint()
         ..color = color

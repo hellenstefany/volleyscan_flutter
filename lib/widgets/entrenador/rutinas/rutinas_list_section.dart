@@ -1,88 +1,172 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'rutinas_colors.dart';
+import '../../../models/rutina_entrenador_data.dart';
+import '../../../theme/dash_colors.dart';
+import '../gestion/gestion_athlete.dart';
+import 'rutinas_catalog.dart';
 import 'rutinas_common_widgets.dart';
-import 'rutinas_model.dart';
 import 'rutinas_routine_card.dart';
 
-/// Separador "RUTINAS REGISTRADAS".
+/// Separador con título dinámico de la sección de rutinas.
 class RutinasListDivider extends StatelessWidget {
-  const RutinasListDivider({super.key});
+  final String label;
+  const RutinasListDivider({super.key, required this.label});
 
   @override
-  Widget build(BuildContext context) => const Row(
-    children: [
-      Expanded(child: Divider(color: RtC.border, height: 1)),
-      Padding(
-        padding: EdgeInsets.symmetric(horizontal: 14),
-        child: Text(
-          'RUTINAS REGISTRADAS',
-          style: TextStyle(fontSize: 11, letterSpacing: 2, color: RtC.muted),
-        ),
-      ),
-      Expanded(child: Divider(color: RtC.border, height: 1)),
-    ],
-  );
+  Widget build(BuildContext context) => Row(
+        children: [
+          const Expanded(child: Divider(color: DashColors.border, height: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Text(
+              label.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 11,
+                letterSpacing: 2,
+                color: DashColors.textMuted,
+              ),
+            ),
+          ),
+          const Expanded(child: Divider(color: DashColors.border, height: 1)),
+        ],
+      );
 }
 
-/// "Total: N rutinas" + filtros por tipo.
+/// "Total: N rutinas" + selector "Ver rutinas de" + filtros por tipo.
 class RutinasListHeader extends StatelessWidget {
   final int count;
   final String filter;
+  final String verAtleta;
+  final List<EntrenadorDeportista> deportistas;
+  final RutinaAtleta? atletaVisto;
   final ValueChanged<String> onFilter;
+  final ValueChanged<String> onVerAtleta;
+
   const RutinasListHeader({
     super.key,
     required this.count,
     required this.filter,
+    required this.verAtleta,
+    required this.deportistas,
+    this.atletaVisto,
     required this.onFilter,
+    required this.onVerAtleta,
   });
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    alignment: WrapAlignment.spaceBetween,
-    crossAxisAlignment: WrapCrossAlignment.center,
-    runSpacing: 10,
-    spacing: 12,
-    children: [
-      Text.rich(
-        TextSpan(
+  Widget build(BuildContext context) {
+    final items = <(String, String)>[
+      ('', 'Todos mis deportistas'),
+      for (final d in deportistas) ('${d.id}', d.nombreCompleto),
+      if (atletaVisto != null &&
+          !deportistas.any((d) => d.id == atletaVisto!.id))
+        ('${atletaVisto!.id}', atletaVisto!.nombreCompleto),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          runSpacing: 12,
+          spacing: 12,
           children: [
-            const TextSpan(text: 'Total: '),
-            TextSpan(
-              text: '$count',
-              style: const TextStyle(color: RtC.accent),
+            Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(text: 'Total: '),
+                  TextSpan(
+                    text: '$count',
+                    style: const TextStyle(color: DashColors.coachPurple),
+                  ),
+                  const TextSpan(text: ' rutinas'),
+                ],
+              ),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: DashColors.text,
+              ),
             ),
-            const TextSpan(text: ' rutinas'),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'VER RUTINAS DE',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 1,
+                    color: DashColors.textMuted,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  constraints: const BoxConstraints(minWidth: 190, maxWidth: 240),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: rtBox(DashColors.card2, 9),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: items.any((i) => i.$1 == verAtleta)
+                          ? verAtleta
+                          : '',
+                      isExpanded: true,
+                      dropdownColor: DashColors.card,
+                      style: const TextStyle(
+                        color: DashColors.text,
+                        fontSize: 13,
+                      ),
+                      icon: const Icon(
+                        Icons.arrow_drop_down,
+                        color: DashColors.textMuted,
+                      ),
+                      items: [
+                        for (final i in items)
+                          DropdownMenuItem(
+                            value: i.$1,
+                            child: Text(i.$2, overflow: TextOverflow.ellipsis),
+                          ),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) onVerAtleta(v);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: RtC.text,
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final t in ['Todas', ...kRutinaTypeColors.keys])
+              RtPill(text: t, selected: filter == t, onTap: () => onFilter(t)),
+          ],
         ),
-      ),
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final t in ['Todas', ...kTypeColors.keys])
-            RtPill(text: t, selected: filter == t, onTap: () => onFilter(t)),
-        ],
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
-/// Cuadrícula responsiva de rutinas (o estado vacío).
+/// Cuadrícula responsiva de rutinas (o estado vacío contextual).
 class RutinasGrid extends StatelessWidget {
   final double width;
-  final List<Routine> list;
-  final ValueChanged<Routine> onToggleDone, onEdit, onDelete;
+  final List<RutinaEntrenador> list;
+  final String today;
+  final String emptyMessage;
+  final ValueChanged<RutinaEntrenador> onEdit;
+  final ValueChanged<RutinaEntrenador> onDelete;
+
   const RutinasGrid({
     super.key,
     required this.width,
     required this.list,
-    required this.onToggleDone,
+    required this.today,
+    required this.emptyMessage,
     required this.onEdit,
     required this.onDelete,
   });
@@ -90,24 +174,25 @@ class RutinasGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (list.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 60, horizontal: 20),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
         child: Center(
           child: Column(
             children: [
-              Opacity(
+              const Opacity(
                 opacity: 0.3,
                 child: Text('📋', style: TextStyle(fontSize: 48)),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Opacity(
-                opacity: 0.5,
+                opacity: 0.55,
                 child: Text(
-                  'Sin rutinas registradas',
-                  style: TextStyle(
+                  emptyMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                     fontSize: 18,
                     letterSpacing: 1,
-                    color: RtC.muted,
+                    color: DashColors.textMuted,
                   ),
                 ),
               ),
@@ -116,6 +201,7 @@ class RutinasGrid extends StatelessWidget {
         ),
       );
     }
+
     const gap = 16.0;
     final cols = math.max(1, ((width + gap) / (300 + gap)).floor());
     final itemW = (width - gap * (cols - 1)) / cols;
@@ -129,7 +215,7 @@ class RutinasGrid extends StatelessWidget {
             width: itemW,
             child: RoutineCard(
               r: r,
-              onToggleDone: () => onToggleDone(r),
+              today: today,
               onEdit: () => onEdit(r),
               onDelete: () => onDelete(r),
             ),

@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-import 'rutinas_colors.dart';
+import '../../../models/rutina_entrenador_data.dart';
+import '../../../theme/dash_colors.dart';
+import 'rutinas_catalog.dart';
 import 'rutinas_common_widgets.dart';
-import 'rutinas_model.dart';
 
 /// Tarjeta "Semana actual": un punto por día con rutinas.
 class RutinasWeekCard extends StatelessWidget {
-  final List<Routine> routines;
+  final List<RutinaEntrenador> visibles;
   final String today;
+
   const RutinasWeekCard({
     super.key,
-    required this.routines,
+    required this.visibles,
     required this.today,
   });
 
@@ -17,15 +19,16 @@ class RutinasWeekCard extends StatelessWidget {
   Widget build(BuildContext context) {
     const names = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     final now = DateTime.now();
-    final monday = now.subtract(Duration(days: now.weekday - 1));
+    final monday = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: rtBox(RtC.card, 14),
+      decoration: rtBox(DashColors.card, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const RtCardTitle(icon: '📅', title: 'Semana actual'),
+          const RtCardTitle(icon: '', title: 'Semana actual'),
           Row(
             children: [
               for (var i = 0; i < 7; i++)
@@ -33,8 +36,8 @@ class RutinasWeekCard extends StatelessWidget {
                   child: Builder(
                     builder: (_) {
                       final d = monday.add(Duration(days: i));
-                      final iso = isoDate(d);
-                      final has = routines.any((r) => r.date == iso);
+                      final iso = rtIsoDate(d);
+                      final has = visibles.any((r) => r.fechaProgramada == iso);
                       final isToday = iso == today;
                       return Column(
                         children: [
@@ -43,7 +46,7 @@ class RutinasWeekCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
-                              color: RtC.muted,
+                              color: DashColors.textMuted,
                             ),
                           ),
                           const SizedBox(height: 5),
@@ -52,19 +55,23 @@ class RutinasWeekCard extends StatelessWidget {
                             height: 8,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: has ? RtC.accent : RtC.border,
+                              color: has
+                                  ? DashColors.coachPurple
+                                  : DashColors.border,
                               boxShadow: has
                                   ? [
                                       BoxShadow(
-                                        color: RtC.accent.withValues(
-                                          alpha: 0.25,
-                                        ),
+                                        color: DashColors.coachPurple
+                                            .withValues(alpha: 0.25),
                                         blurRadius: 6,
                                       ),
                                     ]
                                   : null,
                               border: isToday
-                                  ? Border.all(color: RtC.accent4, width: 2)
+                                  ? Border.all(
+                                      color: DashColors.amber,
+                                      width: 2,
+                                    )
                                   : null,
                             ),
                           ),
@@ -73,7 +80,7 @@ class RutinasWeekCard extends StatelessWidget {
                             '${d.day}',
                             style: const TextStyle(
                               fontSize: 10,
-                              color: RtC.muted,
+                              color: DashColors.textMuted,
                             ),
                           ),
                         ],

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'rutinas_colors.dart';
+import '../../../theme/dash_colors.dart';
+import 'rutinas_catalog.dart';
 import 'rutinas_common_widgets.dart';
-import 'rutinas_model.dart';
 
 /// Carrusel horizontal de rutinas prediseñadas.
 class RutinasPresetsCard extends StatelessWidget {
-  final ValueChanged<Preset> onLoad;
+  final ValueChanged<RutinaPreset> onLoad;
+
   const RutinasPresetsCard({super.key, required this.onLoad});
 
   @override
@@ -13,7 +14,7 @@ class RutinasPresetsCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: rtBox(RtC.card, 14),
+      decoration: rtBox(DashColors.card, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -23,7 +24,7 @@ class RutinasPresetsCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (final p in kPresets)
+                for (final p in kRutinaPresets)
                   Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: InkWell(
@@ -32,7 +33,7 @@ class RutinasPresetsCard extends StatelessWidget {
                       child: Container(
                         width: 190,
                         padding: const EdgeInsets.all(14),
-                        decoration: rtBox(RtC.card2, 12),
+                        decoration: rtBox(DashColors.card2, 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -44,7 +45,7 @@ class RutinasPresetsCard extends StatelessWidget {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1,
-                                color: RtC.text,
+                                color: DashColors.text,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -53,7 +54,7 @@ class RutinasPresetsCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 11,
                                 height: 1.4,
-                                color: RtC.muted,
+                                color: DashColors.textMuted,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -61,7 +62,10 @@ class RutinasPresetsCard extends StatelessWidget {
                               spacing: 4,
                               runSpacing: 4,
                               children: [
-                                RtMiniTag(p.type, color: kTypeColors[p.type]),
+                                RtMiniTag(
+                                  p.type,
+                                  color: kRutinaTypeColors[p.type],
+                                ),
                                 RtMiniTag(p.dur),
                                 RtMiniTag('⚡ ${p.intensity}/10'),
                               ],
