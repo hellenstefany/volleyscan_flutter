@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/coach_link_data.dart';
 import '../models/equipo.dart';
+import '../models/estadisticas_entrenador_data.dart';
 import '../models/my_level_data.dart';
 import '../models/my_matches_data.dart';
 import '../models/my_teams_data.dart';
@@ -1381,6 +1382,28 @@ class ApiService {
   /// Elimina un partido y sus estadísticas (`DELETE /api/ia/partidos/<id>`).
   Future<void> borrarPartidoEntrenador(int partidoId) async {
     await delete('/ia/partidos/$partidoId');
+  }
+
+  // ---------- Estadísticas del Entrenador (/api/ia/estadisticas/entrenador) ----------
+
+  /// Obtiene las estadísticas reales del entrenador para el periodo (`7 | 30 | 90 | 180` días)
+  /// y opcionalmente filtradas por un equipo (`GET /api/ia/estadisticas/entrenador`).
+  Future<CoachStatsResponse> estadisticasEntrenador({
+    int dias = 30,
+    int? equipoId,
+  }) async {
+    final tz = -DateTime.now().timeZoneOffset.inMinutes;
+    final eqParam = equipoId != null ? '&equipo=$equipoId' : '';
+    final data = await get(
+      '/ia/estadisticas/entrenador?dias=$dias&tz=$tz$eqParam',
+    );
+    if (data is Map) {
+      return CoachStatsResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudieron cargar las estadísticas.',
+    );
   }
 
   // ---------- Chat IA (Microservicio :8010) ----------
