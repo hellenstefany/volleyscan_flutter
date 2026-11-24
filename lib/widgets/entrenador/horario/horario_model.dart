@@ -1,78 +1,46 @@
 import 'package:flutter/material.dart';
+import '../../../models/schedule_data.dart';
 
-const kHours = [
-  6,
-  7,
-  8,
-  9,
-  10,
-  11,
-  12,
-  13,
-  14,
-  15,
-  16,
-  17,
-  18,
-  19,
-  20,
-  21,
-  22,
-  23,
+export '../../../models/schedule_data.dart';
+
+const kHours = <int>[
+  6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
 ];
 const kSlotH = 56.0;
-const kDayNames = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
-const kMonthNames = [
-  'Enero',
-  'Febrero',
-  'Marzo',
-  'Abril',
-  'Mayo',
-  'Junio',
-  'Julio',
-  'Agosto',
-  'Septiembre',
-  'Octubre',
-  'Noviembre',
-  'Diciembre',
+const kDayNames = <String>['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+const kMonthNames = <String>[
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
-const kMonthShort = [
-  'Ene',
-  'Feb',
-  'Mar',
-  'Abr',
-  'May',
-  'Jun',
-  'Jul',
-  'Ago',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dic',
+const kMonthShort = <String>[
+  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
 ];
-const kTipos = ['Entrenamiento', 'Competencia', 'Reunión', 'Otro'];
 
-class Ev {
-  final int id;
-  final String title, type, place, notes;
-  final DateTime start, end;
-  const Ev({
-    required this.id,
-    required this.title,
-    required this.type,
-    required this.place,
-    required this.notes,
-    required this.start,
-    required this.end,
-  });
-}
+/// Tipos de evento en la base de datos (`vinculos/horario.py`: `TIPOS`).
+const kHorarioTipos = <(String, String)>[
+  ('entrenamiento', 'Entrenamiento'),
+  ('partido', 'Competencia'),
+  ('evaluacion', 'Evaluación'),
+  ('reunion', 'Reunión'),
+  ('otro', 'Otro'),
+];
 
-/// Resultado del modal de evento: guardar (ev) o eliminar (delete).
-class EvDialogResult {
-  final Ev? ev;
-  final bool delete;
-  const EvDialogResult({this.ev, this.delete = false});
-}
+/// Estados del evento (`vinculos/horario.py`: `ESTADOS`).
+const kHorarioEstados = <(String, String)>[
+  ('programado', 'Programado'),
+  ('en_curso', 'En curso'),
+  ('completado', 'Completado'),
+  ('cancelado', 'Cancelado'),
+];
+
+/// Estados de asistencia (`vinculos/asistencia.py`: `ESTADOS`).
+const kAsistenciaOpciones = <(String, String)>[
+  ('presente', 'Presente'),
+  ('tarde', 'Tarde'),
+  ('ausente', 'Ausente'),
+  ('justificado', 'Justificado'),
+];
 
 bool sameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
@@ -88,7 +56,10 @@ DateTime addMonths(DateTime d, int delta) {
   return DateTime(first.year, first.month, d.day > last ? last : d.day);
 }
 
-List<Ev> eventsForDay(List<Ev> events, DateTime date) {
+List<CoachScheduleEvent> eventsForDay(
+  List<CoachScheduleEvent> events,
+  DateTime date,
+) {
   final s = DateTime(date.year, date.month, date.day);
   final e = DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
   return events
@@ -97,37 +68,29 @@ List<Ev> eventsForDay(List<Ev> events, DateTime date) {
     ..sort((a, b) => a.start.compareTo(b.start));
 }
 
-/// Eventos de ejemplo (relativos a hoy).
-List<Ev> sampleEvents() {
-  final t = DateTime.now();
-  final y = t.year, m = t.month, d = t.day;
-  return [
-    Ev(
-      id: 1,
-      title: 'Entrenamiento técnico',
-      type: 'Entrenamiento',
-      place: 'Cancha Principal',
-      notes: 'Técnica de recepción y saque',
-      start: DateTime(y, m, d, 8),
-      end: DateTime(y, m, d, 10),
-    ),
-    Ev(
-      id: 2,
-      title: 'Partido vs Tigres',
-      type: 'Competencia',
-      place: 'Estadio Municipal',
-      notes: 'Uniforme completo',
-      start: DateTime(y, m, d + 1, 15),
-      end: DateTime(y, m, d + 1, 17, 30),
-    ),
-    Ev(
-      id: 3,
-      title: 'Reunión táctica',
-      type: 'Reunión',
-      place: 'Sala de conferencias',
-      notes: 'Revisión de videos',
-      start: DateTime(y, m, d + 3, 19),
-      end: DateTime(y, m, d + 3, 20, 30),
-    ),
-  ];
+/// Rango `[desde, hasta]` (`AAAA-MM-DD`) que se pide al servidor según `view` (`'semana'` | `'mes'`).
+/// Replica exactamente `rangoVisible` en `VolleyScan_Next/src/app/panel_entrenador/horario/page.jsx:146-160`.
+(String, String) visibleRangeFor(String view, DateTime currentDate) {
+  if (view == 'semana') {
+    final d = DateTime(currentDate.year, currentDate.month, currentDate.day);
+    final monday = d.subtract(Duration(days: d.weekday - 1));
+    final sunday = DateTime(monday.year, monday.month, monday.day + 6);
+    return (fmtDate(monday), fmtDate(sunday));
+  }
+  final first = DateTime(currentDate.year, currentDate.month, 1);
+  final prevDays = first.weekday - 1;
+  final ini = DateTime(first.year, first.month, 1 - prevDays);
+  final fin = DateTime(ini.year, ini.month, ini.day + 41);
+  return (fmtDate(ini), fmtDate(fin));
+}
+
+String inicialesDeNombre(String nombre) {
+  final parts = nombre
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((s) => s.isNotEmpty)
+      .take(2)
+      .toList();
+  if (parts.isEmpty) return '?';
+  return parts.map((p) => p[0]).join().toUpperCase();
 }

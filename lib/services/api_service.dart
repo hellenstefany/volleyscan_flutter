@@ -1236,6 +1236,79 @@ class ApiService {
     await delete('/ia/equipos/$equipoId/entrenadores/$entrenadorId');
   }
 
+  // ---------- Horario y Asistencia del Entrenador (/api/ia/horario...) ----------
+
+  /// Lista los eventos del horario del entrenador en un rango `[desde, hasta]` (`AAAA-MM-DD`)
+  /// (`GET /api/ia/horario?desde=...&hasta=...`).
+  Future<List<CoachScheduleEvent>> listarEventosHorarioEntrenador({
+    required String desde,
+    required String hasta,
+  }) async {
+    final q =
+        '?desde=${Uri.encodeQueryComponent(desde)}&hasta=${Uri.encodeQueryComponent(hasta)}';
+    final data = await get('/ia/horario$q');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((m) => CoachScheduleEvent.fromJson(Map<String, dynamic>.from(m)))
+          .toList();
+    }
+    return const <CoachScheduleEvent>[];
+  }
+
+  /// Crea un evento en el horario del entrenador (`POST /api/ia/horario`) y devuelve su `id`.
+  Future<int> crearEventoHorarioEntrenador(Map<String, dynamic> datos) async {
+    final data = await post('/ia/horario', datos);
+    if (data is Map && data['id'] != null) {
+      return int.tryParse(data['id'].toString()) ?? 0;
+    }
+    return 0;
+  }
+
+  /// Edita un evento del horario del entrenador (`PUT /api/ia/horario/<id>`).
+  Future<void> editarEventoHorarioEntrenador(
+    int eventoId,
+    Map<String, dynamic> datos,
+  ) async {
+    await put('/ia/horario/$eventoId', datos);
+  }
+
+  /// Elimina un evento del horario del entrenador (`DELETE /api/ia/horario/<id>`).
+  Future<void> eliminarEventoHorarioEntrenador(int eventoId) async {
+    await delete('/ia/horario/$eventoId');
+  }
+
+  /// Obtiene la lista de asistencia de un evento (`GET /api/ia/horario/<id>/asistencia`).
+  Future<CoachAttendanceResponse> obtenerAsistenciaHorario(int eventoId) async {
+    final data = await get('/ia/horario/$eventoId/asistencia');
+    if (data is Map) {
+      return CoachAttendanceResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo cargar la lista de asistencia.',
+    );
+  }
+
+  /// Guarda los cambios en la lista de asistencia de un evento
+  /// (`PUT /api/ia/horario/<id>/asistencia`).
+  Future<CoachAttendanceResponse> guardarAsistenciaHorario(
+    int eventoId,
+    List<Map<String, dynamic>> registros,
+  ) async {
+    final data = await put(
+      '/ia/horario/$eventoId/asistencia',
+      {'registros': registros},
+    );
+    if (data is Map) {
+      return CoachAttendanceResponse.fromJson(Map<String, dynamic>.from(data));
+    }
+    throw const ApiException(
+      statusCode: 0,
+      message: 'No se pudo guardar la asistencia.',
+    );
+  }
+
   // ---------- Chat IA (Microservicio :8010) ----------
 
   /// Envía una consulta al entrenador virtual (`POST $aiBaseUrl/chat`).

@@ -1,50 +1,73 @@
 import 'package:flutter/material.dart';
 
-/// Colores (de tu :root en Horario.css)
+import '../../../theme/app_theme.dart';
+import '../../../theme/dash_colors.dart';
+
+/// Tokens de color del Horario del Entrenador mapeados 100% a `DashColors` y `AppGradients`
+/// (sin colores hexadecimales ni `EntrenadorColors`).
 class HC {
-  static const bg2 = Color(0xFF0C1220);
-  static const card = Color(0xFF0E1525);
-  static const card2 = Color(0xFF121D30);
-  static const card3 = Color(0xFF172038);
-  static const hover = Color(0xFF1A2540);
-  static const border = Color(0x0FFFFFFF); // rgba(255,255,255,.06)
-  static const border2 = Color(0x1CFFFFFF); // rgba(255,255,255,.11)
-  static const blue = Color(0xFF3B82F6);
-  static const blue2 = Color(0xFF60A5FA);
-  static const purple = Color(0xFF6D28D9);
-  static const purple2 = Color(0xFF8B5CF6);
-  static const purpleG1 = Color(0xFF5B21B6);
-  static const purpleG2 = Color(0xFF7C3AED);
-  static const green = Color(0xFF10B981);
-  static const t1 = Color(0xFFEEF4FF);
-  static const t2 = Color(0xFF7A90B8);
-  static const t3 = Color(0xFF374A6E);
+  HC._();
+
+  static const bg2 = DashColors.bg;
+  static const card = DashColors.cardDark;
+  static const card2 = DashColors.card2;
+  static const card3 = DashColors.surface;
+  static const hover = DashColors.cardHover;
+  static const border = DashColors.borderSubtle;
+  static const border2 = DashColors.border2;
+  static const blue = DashColors.blueLight;
+  static const blue2 = DashColors.accent2;
+  static const purple = DashColors.sidebarActiveBorder;
+  static const purple2 = DashColors.coachPurple;
+  static const green = DashColors.green;
+  static const amber = DashColors.amber;
+  static const orange = DashColors.orange;
+  static const red = DashColors.red;
+  static const redSoft = DashColors.deltaDown;
+  static const t1 = DashColors.text1;
+  static const t2 = DashColors.textMuted;
+  static const t3 = DashColors.text3;
+
+  static const activeGrad = AppGradients.sidebarLogoIcon;
 }
 
-// Colores por tipo de evento
-Color evBg(String t) => switch (t) {
-  'Entrenamiento' => const Color(0xFF1C3461),
-  'Competencia' => const Color(0xFF4A1020),
-  'Reunión' => const Color(0xFF1A2E1A),
-  _ => const Color(0xFF2A1F40),
-};
+String _normTipo(String raw) {
+  final t = raw.trim().toLowerCase();
+  if (t == 'competencia' || t == 'partido') return 'partido';
+  if (t == 'evaluación' || t == 'evaluacion') return 'evaluacion';
+  if (t == 'reunión' || t == 'reunion') return 'reunion';
+  if (t == 'entrenamiento') return 'entrenamiento';
+  return 'otro';
+}
 
-Color evBorder(String t) => switch (t) {
-  'Entrenamiento' => HC.blue,
-  'Competencia' => const Color(0xFFDC2626),
-  'Reunión' => HC.green,
-  _ => HC.purple2,
-};
+Color evBg(String tipo) => switch (_normTipo(tipo)) {
+      'entrenamiento' => DashColors.blue.withValues(alpha: 0.28),
+      'partido' => DashColors.red.withValues(alpha: 0.25),
+      'evaluacion' => DashColors.amber.withValues(alpha: 0.22),
+      'reunion' => DashColors.green.withValues(alpha: 0.22),
+      _ => DashColors.coachPurple.withValues(alpha: 0.24),
+    };
 
-Color dotFg(String t) => switch (t) {
-  'Entrenamiento' => HC.blue2,
-  'Competencia' => const Color(0xFFF87171),
-  'Reunión' => const Color(0xFF34D399),
-  _ => HC.purple2,
-};
+Color evBorder(String tipo) => switch (_normTipo(tipo)) {
+      'entrenamiento' => HC.blue,
+      'partido' => HC.red,
+      'evaluacion' => HC.amber,
+      'reunion' => HC.green,
+      _ => HC.purple2,
+    };
 
-IconData tipoIcon(String t) => switch (t) {
-  'Competencia' => Icons.emoji_events,
-  'Reunión' => Icons.groups,
-  _ => Icons.sports_volleyball,
-};
+Color dotFg(String tipo) => switch (_normTipo(tipo)) {
+      'entrenamiento' => HC.blue2,
+      'partido' => HC.redSoft,
+      'evaluacion' => HC.amber,
+      'reunion' => DashColors.successBadgeText,
+      _ => HC.purple2,
+    };
+
+IconData tipoIcon(String tipo) => switch (_normTipo(tipo)) {
+      'partido' => Icons.emoji_events_rounded,
+      'evaluacion' => Icons.fact_check_rounded,
+      'reunion' => Icons.groups_rounded,
+      'otro' => Icons.event_rounded,
+      _ => Icons.sports_volleyball_rounded,
+    };
