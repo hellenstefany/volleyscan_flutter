@@ -22,6 +22,7 @@ import '../models/device_data.dart';
 import '../models/preferences_data.dart';
 import '../models/profile_data.dart';
 import '../models/progreso_atleta_data.dart';
+import '../models/rutina_entrenador_data.dart';
 import '../widgets/entrenador/dashboard/dashboard_models.dart';
 import '../widgets/entrenador/gestion/gestion_athlete.dart';
 import '../widgets/entrenador/perfil/perfil_model.dart';
@@ -1407,6 +1408,46 @@ class ApiService {
   }
 
   // ---------- Chat IA (Microservicio :8010) ----------
+
+  // ---------- Rutinas del Entrenador (/api/ia/rutinas/entrenador) ----------
+
+  /// Lista las rutinas asignadas por el entrenador (`GET /api/ia/rutinas/entrenador`).
+  Future<List<RutinaEntrenador>> listarRutinasEntrenador() async {
+    final data = await get('/ia/rutinas/entrenador');
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((m) => RutinaEntrenador.fromJson(Map<String, dynamic>.from(m)))
+          .toList();
+    }
+    return const <RutinaEntrenador>[];
+  }
+
+  /// Crea una rutina para uno o varios deportistas (`POST /api/ia/rutinas/entrenador`).
+  /// Devuelve la lista de IDs creados (`data['ids']`).
+  Future<List<int>> crearRutinasEntrenador(Map<String, dynamic> datos) async {
+    final data = await post('/ia/rutinas/entrenador', datos);
+    if (data is Map && data['ids'] is List) {
+      return (data['ids'] as List)
+          .map((e) => e is num ? e.toInt() : int.tryParse(e.toString()) ?? 0)
+          .where((id) => id > 0)
+          .toList();
+    }
+    return const <int>[];
+  }
+
+  /// Edita una rutina asignada sin avance (`PUT /api/ia/rutinas/entrenador/<id>`).
+  Future<void> editarRutinaEntrenador(
+    int rutinaId,
+    Map<String, dynamic> datos,
+  ) async {
+    await put('/ia/rutinas/entrenador/$rutinaId', datos);
+  }
+
+  /// Elimina una rutina asignada (`DELETE /api/ia/rutinas/entrenador/<id>`).
+  Future<void> eliminarRutinaEntrenador(int rutinaId) async {
+    await delete('/ia/rutinas/entrenador/$rutinaId');
+  }
 
   /// Envía una consulta al entrenador virtual (`POST $aiBaseUrl/chat`).
   Future<String> enviarMensajeChatIA(String mensaje) async {
